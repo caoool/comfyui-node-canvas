@@ -11,7 +11,7 @@
       <NodeLibrary />
     </template>
     <template #canvas>
-      <div class="placeholder">Canvas</div>
+      <NodeCanvas />
     </template>
     <template #properties>
       <div class="placeholder">Properties</div>
@@ -26,6 +26,7 @@
 import { ref } from 'vue'
 import AppLayout from './components/AppLayout.vue'
 import NodeLibrary from './components/NodeLibrary.vue'
+import NodeCanvas from './components/NodeCanvas.vue'
 import { useProjectStore } from './stores/project'
 
 const projectStore = useProjectStore()
