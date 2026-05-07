@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bash \"C:/Users/lu/.claude/plugins/cache/claude-plugins-official/superpowers/5.1.0/skills/brainstorming/scripts/start-server.sh\" --project-dir \"C:/Users/lu/Developments/hobby/ComfyUI-GUI-Builder\")",
+      "PowerShell(bash --version 2>&1)",
+      "Bash(ping -n 4 127.0.0.1)",
+      "Bash(timeout 8 bash -c 'while ! grep -q \"server-started\" /mnt/c/Users/lu/Developments/hobby/ComfyUI-GUI-Builder/.superpowers/brainstorm/*/state/server-info 2>/dev/null; do sleep 1; done; cat /mnt/c/Users/lu/Developments/hobby/ComfyUI-GUI-Builder/.superpowers/brainstorm/*/state/server-info 2>/dev/null')",
+      "Read(//mnt/c/Users/lu/Developments/hobby/ComfyUI-GUI-Builder/.superpowers/**)",
+      "Read(//usr/bin/**)",
+      "Read(//bin/**)",
+      "Bash(mkdir -p \"/mnt/c/Users/lu/Developments/hobby/ComfyUI-GUI-Builder/docs/superpowers/specs\")",
+      "PowerShell(cd \"C:\\\\Users\\\\lu\\\\Developments\\\\hobby\\\\ComfyUI-GUI-Builder\"; $job = Start-Job -ScriptBlock { cd \"C:\\\\Users\\\\lu\\\\Developments\\\\hobby\\\\ComfyUI-GUI-Builder\"; npx vite --port 5173 2>&1 }; Start-Sleep -Seconds 8; $output = Receive-Job $job; Stop-Job $job; Remove-Job $job; $output)",
+      "PowerShell(cd \"C:\\\\Users\\\\lu\\\\Developments\\\\hobby\\\\ComfyUI-GUI-Builder\"; $proc = Start-Process -FilePath \"npx\" -ArgumentList \"vite\",\"--port\",\"5173\" -PassThru -NoNewWindow -RedirectStandardOutput \"$env:TEMP\\\\vite_out.txt\" -RedirectStandardError \"$env:TEMP\\\\vite_err.txt\"; Start-Sleep -Seconds 8; $stdout = Get-Content \"$env:TEMP\\\\vite_out.txt\" -ErrorAction SilentlyContinue; $stderr = Get-Content \"$env:TEMP\\\\vite_err.txt\" -ErrorAction SilentlyContinue; Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue; \"STDOUT:\", $stdout, \"STDERR:\", $stderr)"
+    ]
+  }
+}

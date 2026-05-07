@@ -1,0 +1,36 @@
+{
+  "name": "comfyui-gui-builder",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently \"vite\" \"tsx watch server/index.ts\"",
+    "build": "vue-tsc && vite build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "server": "tsx server/index.ts"
+  },
+  "dependencies": {
+    "@guolao/vue-monaco-editor": "^1.6.0",
+    "axios": "^1.16.0",
+    "jszip": "^3.10.1",
+    "monaco-editor": "^0.55.1",
+    "pinia": "^3.0.4",
+    "vue": "^3.5.32",
+    "vuedraggable": "^4.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.12.2",
+    "@vitejs/plugin-vue": "^6.0.6",
+    "@vitest/coverage-v8": "^4.1.5",
+    "@vue/test-utils": "^2.4.10",
+    "@vue/tsconfig": "^0.9.1",
+    "concurrently": "^9.2.1",
+    "jsdom": "^29.1.1",
+    "tsx": "^4.21.0",
+    "typescript": "~6.0.2",
+    "vite": "^8.0.10",
+    "vitest": "^4.1.5",
+    "vue-tsc": "^3.2.7"
+  }
+}
