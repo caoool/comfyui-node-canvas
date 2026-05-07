@@ -39,10 +39,15 @@ const showSettings = ref(false)
 const statusText = ref('Ready')
 
 async function onExportZip() {
-  const blob = await exportZip(projectStore.project)
-  const name = projectStore.project.name.replace(/\s+/g, '_') || 'node_pack'
-  downloadBlob(blob, `${name}.zip`)
-  uiStore.showToast('ZIP exported!', 'success')
+  try {
+    const blob = await exportZip(projectStore.project)
+    const name = projectStore.project.name.replace(/\s+/g, '_') || 'node_pack'
+    downloadBlob(blob, `${name}.zip`)
+    uiStore.showToast('ZIP exported!', 'success')
+  } catch (err) {
+    uiStore.showToast('Export failed. Check console for details.', 'error')
+    console.error('Export error:', err)
+  }
 }
 
 function onHotReload() {
