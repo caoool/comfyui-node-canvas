@@ -8,7 +8,7 @@
     @settings="showSettings = true"
   >
     <template #library>
-      <div class="placeholder">Library</div>
+      <NodeLibrary />
     </template>
     <template #canvas>
       <div class="placeholder">Canvas</div>
@@ -25,6 +25,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import AppLayout from './components/AppLayout.vue'
+import NodeLibrary from './components/NodeLibrary.vue'
 import { useProjectStore } from './stores/project'
 
 const projectStore = useProjectStore()
