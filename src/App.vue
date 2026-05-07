@@ -14,7 +14,7 @@
       <NodeCanvas />
     </template>
     <template #properties>
-      <div class="placeholder">Properties</div>
+      <PropertiesPanel />
     </template>
     <template #code>
       <div class="placeholder">Code</div>
@@ -27,6 +27,7 @@ import { ref } from 'vue'
 import AppLayout from './components/AppLayout.vue'
 import NodeLibrary from './components/NodeLibrary.vue'
 import NodeCanvas from './components/NodeCanvas.vue'
+import PropertiesPanel from './components/PropertiesPanel.vue'
 import { useProjectStore } from './stores/project'
 
 const projectStore = useProjectStore()
