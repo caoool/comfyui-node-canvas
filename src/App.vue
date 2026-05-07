@@ -30,13 +30,19 @@ import NodeCanvas from './components/NodeCanvas.vue'
 import PropertiesPanel from './components/PropertiesPanel.vue'
 import CodePanel from './components/CodePanel.vue'
 import { useProjectStore } from './stores/project'
+import { useUiStore } from './stores/ui'
+import { exportZip, downloadBlob } from './lib/exportZip'
 
 const projectStore = useProjectStore()
+const uiStore = useUiStore()
 const showSettings = ref(false)
 const statusText = ref('Ready')
 
-function onExportZip() {
-  // TODO: implement in Task 11
+async function onExportZip() {
+  const blob = await exportZip(projectStore.project)
+  const name = projectStore.project.name.replace(/\s+/g, '_') || 'node_pack'
+  downloadBlob(blob, `${name}.zip`)
+  uiStore.showToast('ZIP exported!', 'success')
 }
 
 function onHotReload() {
