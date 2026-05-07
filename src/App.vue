@@ -1,11 +1,67 @@
-<script setup lang="ts">
-</script>
-
 <template>
-  <div id="app">ComfyUI Node Builder</div>
+  <AppLayout
+    :status-text="statusText"
+    :connected="false"
+    @add-node="projectStore.addNode()"
+    @export-zip="onExportZip"
+    @hot-reload="onHotReload"
+    @settings="showSettings = true"
+  >
+    <template #library>
+      <div class="placeholder">Library</div>
+    </template>
+    <template #canvas>
+      <div class="placeholder">Canvas</div>
+    </template>
+    <template #properties>
+      <div class="placeholder">Properties</div>
+    </template>
+    <template #code>
+      <div class="placeholder">Code</div>
+    </template>
+  </AppLayout>
 </template>
+
+<script setup lang="ts">
+import { ref } from 'vue'
+import AppLayout from './components/AppLayout.vue'
+import { useProjectStore } from './stores/project'
+
+const projectStore = useProjectStore()
+const showSettings = ref(false)
+const statusText = ref('Ready')
+
+function onExportZip() {
+  // TODO: implement in Task 11
+}
+
+function onHotReload() {
+  // TODO: implement in Task 13
+}
+</script>
 
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { background: #202020; color: #e0e0e0; font-family: system-ui, sans-serif; }
+html, body { height: 100%; }
+#app { height: 100%; }
+
+:root {
+  --bg: #202020;
+  --panel: #252525;
+  --node-body: #353535;
+  --header: #4a4a4a;
+  --border: #3a3a3a;
+  --text: #e0e0e0;
+  --text-dim: #a0a0a0;
+  --accent: #4a9eff;
+}
+
+.placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-dim);
+  font-size: 13px;
+}
 </style>
