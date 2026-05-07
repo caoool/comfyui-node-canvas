@@ -20,9 +20,18 @@ function formatPortEntry(port: PortSpec, widget: WidgetSpec | undefined): string
   switch (widget.widgetType) {
     case 'slider':
     case 'int': {
-      const cfg = widget.config as { min: unknown; max: unknown; step: unknown; default: unknown }
+      const cfg = widget.config as Record<string, unknown>
+      const min = cfg.min
+      const max = cfg.max
+      const step = cfg.step
+      const def = cfg.default
+      const entries: string[] = []
+      if (def !== undefined) entries.push(`"default": ${formatValue(def)}`)
+      if (min !== undefined) entries.push(`"min": ${formatValue(min)}`)
+      if (max !== undefined) entries.push(`"max": ${formatValue(max)}`)
+      if (step !== undefined) entries.push(`"step": ${formatValue(step)}`)
       const pyType = port.type // FLOAT or INT as specified by port
-      return `"${port.name}": ("${pyType}", {"default": ${formatValue(cfg.default)}, "min": ${formatValue(cfg.min)}, "max": ${formatValue(cfg.max)}, "step": ${formatValue(cfg.step)}})`
+      return `"${port.name}": ("${pyType}", {${entries.join(', ')}})`
     }
     case 'dropdown': {
       const cfg = widget.config as { options: string[] }
@@ -31,7 +40,7 @@ function formatPortEntry(port: PortSpec, widget: WidgetSpec | undefined): string
       return `"${port.name}": ([${options}], {"default": ${def}})`
     }
     case 'text': {
-      return `"${port.name}": ("STRING", {"multiline": false})`
+      return `"${port.name}": ("${port.type}", {"multiline": false})`
     }
     case 'bool': {
       return `"${port.name}": ("BOOLEAN", {"default": ${formatValue(widget.default)}})`
@@ -76,7 +85,9 @@ export function generatePython(node: NodeSpec): string {
     lines.push(`            "required": {`)
     for (const port of requiredPorts) {
       const widget = port.isWidget ? widgetByPortId.get(port.id) : undefined
-      lines.push(`                ${formatPortEntry(port, widget)},`)
+      // If isWidget is true but no widget found in map, treat as plain port
+      const resolvedWidget = port.isWidget && widget === undefined ? undefined : widget
+      lines.push(`                ${formatPortEntry(port, resolvedWidget)},`)
     }
     lines.push(`            },`)
   }
@@ -118,7 +129,7 @@ export function generatePython(node: NodeSpec): string {
     lines.push(`        pass`)
   } else {
     for (const codeLine of node.code.split('\n')) {
-      lines.push(`        ${codeLine}`)
+      lines.push(codeLine === '' ? '' : `        ${codeLine}`)
     }
   }
 

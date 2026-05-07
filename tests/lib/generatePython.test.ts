@@ -94,7 +94,7 @@ describe('generatePython', () => {
     expect(output).toContain('(["a", "b"], {"default": "a"})')
   })
 
-  it('generates text widget', () => {
+  it('generates text widget using port.type', () => {
     const inputs: PortSpec[] = [
       { id: 'p1', name: 'prompt', type: 'STRING', optional: false, isWidget: true },
     ]
@@ -109,7 +109,7 @@ describe('generatePython', () => {
     ]
     const node = makeNode({ inputs, widgets })
     const output = generatePython(node)
-    expect(output).toContain('("STRING", {"multiline": false})')
+    expect(output).toContain('"prompt": ("STRING", {"multiline": false})')
   })
 
   it('generates bool widget', () => {
@@ -152,5 +152,40 @@ describe('generatePython', () => {
     const node = makeNode({ code: 'return image' })
     const output = generatePython(node)
     expect(output).toContain('        return image')
+  })
+
+  it('generates int widget with INT type', () => {
+    const inputs: PortSpec[] = [
+      { id: 'p1', name: 'steps', type: 'INT', optional: false, isWidget: true },
+    ]
+    const widgets: WidgetSpec[] = [
+      {
+        id: 'w1',
+        portId: 'p1',
+        widgetType: 'int',
+        default: 20,
+        config: { min: 1, max: 100, step: 1, default: 20 },
+      },
+    ]
+    const node = makeNode({ inputs, widgets })
+    const output = generatePython(node)
+    expect(output).toContain('"steps": ("INT", {"default": 20, "min": 1, "max": 100, "step": 1})')
+  })
+
+  it('generates RETURN_NAMES when non-empty', () => {
+    const node = makeNode({ returnTypes: ['IMAGE'], returnNames: ['result'] })
+    const output = generatePython(node)
+    expect(output).toContain('RETURN_NAMES = ("result",)')
+  })
+
+  it('preserves blank lines in user code without adding spaces', () => {
+    const node = makeNode({ code: 'line1\n\nline3' })
+    const output = generatePython(node)
+    expect(output).toContain('        line1')
+    expect(output).toContain('        line3')
+    // blank line between them must not have trailing spaces
+    const lines = output.split('\n')
+    const blankIdx = lines.findIndex(l => l === '')
+    expect(blankIdx).toBeGreaterThan(-1)
   })
 })
