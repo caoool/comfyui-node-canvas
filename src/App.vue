@@ -17,7 +17,7 @@
       <PropertiesPanel />
     </template>
     <template #code>
-      <div class="placeholder">Code</div>
+      <CodePanel />
     </template>
   </AppLayout>
 </template>
@@ -28,6 +28,7 @@ import AppLayout from './components/AppLayout.vue'
 import NodeLibrary from './components/NodeLibrary.vue'
 import NodeCanvas from './components/NodeCanvas.vue'
 import PropertiesPanel from './components/PropertiesPanel.vue'
+import CodePanel from './components/CodePanel.vue'
 import { useProjectStore } from './stores/project'
 
 const projectStore = useProjectStore()
