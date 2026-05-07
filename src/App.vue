@@ -1,4 +1,5 @@
 <template>
+  <SettingsModal v-model="showSettings" />
   <AppLayout
     :status-text="statusText"
     :connected="connected"
@@ -25,6 +26,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import AppLayout from './components/AppLayout.vue'
+import SettingsModal from './components/SettingsModal.vue'
 import NodeLibrary from './components/NodeLibrary.vue'
 import NodeCanvas from './components/NodeCanvas.vue'
 import PropertiesPanel from './components/PropertiesPanel.vue'
