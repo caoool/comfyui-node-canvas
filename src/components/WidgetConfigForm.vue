@@ -84,7 +84,7 @@ watch(widgetInfo, (info) => {
   if (!info) return
   const w = info.widget
   if (w.widgetType === 'slider' || w.widgetType === 'int') {
-    sliderDefault.value = (w.config.default as number) ?? 0
+    sliderDefault.value = (w.default as number) ?? 0
     sliderMin.value = (w.config.min as number) ?? 0
     sliderMax.value = (w.config.max as number) ?? 1
     sliderStep.value = (w.config.step as number) ?? 0.1
@@ -108,7 +108,7 @@ function updateWidget(config: Record<string, unknown>, defaultVal: unknown) {
 
 function saveSlider() {
   updateWidget(
-    { default: sliderDefault.value, min: sliderMin.value, max: sliderMax.value, step: sliderStep.value },
+    { min: sliderMin.value, max: sliderMax.value, step: sliderStep.value },
     sliderDefault.value
   )
 }
