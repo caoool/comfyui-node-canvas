@@ -10,9 +10,17 @@ Build powerful ComfyUI custom node packs with a visual GUI and AI.
 
 ![Looping demo: user prompt to AI-created, deployed, and tested ComfyUI node](demo-ai-node-workflow.gif)
 
-**Prompt to ComfyUI node, handled by AI:** user enters the node idea -> AI builds the node -> deploys into ComfyUI -> tested in a workflow.
+### Prompt to ComfyUI Node, Handled by AI
 
-**从提示到 ComfyUI 节点，AI 完成重活：** 用户输入节点需求 -> AI 构建节点 -> 部署到 ComfyUI -> 在工作流中测试。
+| 1. User enters the node idea | 2. AI builds the node | 3. Deploys into ComfyUI | 4. Tested in a workflow |
+| --- | --- | --- | --- |
+| A simple string prompt enhancer request. | Node contract, Python, requirements, and generated files. | The pack is written after deploy approval. | The generated node is ready inside ComfyUI. |
+
+### 从提示到 ComfyUI 节点，AI 完成重活
+
+| 1. 用户输入节点需求 | 2. AI 构建节点 | 3. 部署到 ComfyUI | 4. 在工作流中测试 |
+| --- | --- | --- | --- |
+| 一个简单的字符串提示词增强节点需求。 | 节点接口、Python、依赖和生成文件。 | 允许部署后写入节点包。 | 生成的节点可以在 ComfyUI 中使用。 |
 
 **Demo:** a user asks for a simple LLM prompt-enhancer node; AI creates the node contract and code, updates dependencies, deploys the pack, and the node is tested in ComfyUI.
 
