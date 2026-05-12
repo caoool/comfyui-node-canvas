@@ -395,6 +395,10 @@ p::selection {
   object-fit: cover;
 }
 
+.demo-shot {
+  --demo-loop: 41.6s;
+}
+
 .demo-frame {
   position: relative;
   overflow: hidden;
@@ -409,18 +413,11 @@ p::selection {
 }
 
 .demo-overlay {
-  position: absolute;
-  right: 16px;
-  bottom: 16px;
-  left: 16px;
+  position: relative;
   z-index: 2;
-  padding: 14px 16px 15px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 14px;
+  padding: 16px 18px 17px;
+  border-top: 1px solid var(--border);
   background: linear-gradient(135deg, rgba(17, 24, 39, 0.92), rgba(7, 9, 15, 0.94));
-  box-shadow: 0 18px 42px -20px rgba(0, 0, 0, 0.78);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
 }
 
 .demo-progress-track {
@@ -437,7 +434,7 @@ p::selection {
   height: 100%;
   border-radius: inherit;
   background: var(--grad);
-  animation: demo-progress 12s linear infinite;
+  animation: demo-progress var(--demo-loop) linear infinite;
 }
 
 .demo-overlay-title {
@@ -459,19 +456,19 @@ p::selection {
   align-items: center;
   gap: 8px;
   opacity: 0;
-  animation: demo-step 12s ease-in-out infinite;
+  animation: demo-step var(--demo-loop) ease-in-out infinite;
 }
 
 .demo-step-two {
-  animation-delay: 3s;
+  animation-delay: calc(var(--demo-loop) * 0.25);
 }
 
 .demo-step-three {
-  animation-delay: 6s;
+  animation-delay: calc(var(--demo-loop) * 0.5);
 }
 
 .demo-step-four {
-  animation-delay: 9s;
+  animation-delay: calc(var(--demo-loop) * 0.75);
 }
 
 .demo-step span {
@@ -864,9 +861,6 @@ footer a {
   }
 
   .demo-overlay {
-    right: 10px;
-    bottom: 10px;
-    left: 10px;
     padding: 12px;
   }
 
