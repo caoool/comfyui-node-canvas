@@ -12,7 +12,9 @@ export const AI_SKILLS: AiSkill[] = [
     description: 'Create and edit ComfyUI custom node contracts, code, return UI, and metadata.',
     prompt: [
       'Use create_node to add new nodes.',
+      'If the active project has no nodes, create the first node with create_node instead of update_node.',
       'Use update_node to edit existing nodes; update_node must use patch, not node, for the changed NodeSpec fields.',
+      'When using update_node, include nodeId or nodeName from the current project JSON unless editing the currently selected node.',
       'Prefer ComfyUI-friendly Python class names and snake_case input names.',
       'uiOutputs use key, kind, label, expression. For a text display, use kind "text" and expression set to the Python variable to display.',
       'Do not put class definitions, INPUT_TYPES, RETURN_TYPES, or NODE_CLASS_MAPPINGS inside moduleCode or code; the builder generates those around the node contract.',

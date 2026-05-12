@@ -111,6 +111,82 @@ describe('builderAutomation', () => {
     expect(uiStore.selectedNodeId).toBe(node.id)
   })
 
+  it('creates and selects a node when AI sends targetless update_node into an empty pack', async () => {
+    const projectStore = useProjectStore()
+    const uiStore = useUiStore()
+
+    await applyBuilderAction(projectStore, uiStore, {
+      type: 'rename_pack',
+      name: 'LLM Prompt Tools',
+      packFolderName: 'LLM_Prompt_Tools',
+    })
+    await applyBuilderAction(projectStore, uiStore, {
+      type: 'set_requirements',
+      requirements: ['transformers', 'torch', 'accelerate'],
+    })
+    const updateResult = await applyBuilderAction(projectStore, uiStore, {
+      type: 'update_node',
+      node: {
+        name: 'SmallLLMPromptEnhancer',
+        displayName: 'Small LLM Prompt Enhancer',
+        category: 'ComfyUINodeBuilder/AI',
+        inputs: [
+          { name: 'prompt', type: 'STRING', optional: false, isWidget: true },
+        ],
+        outputs: [
+          { name: 'enhanced_prompt', type: 'STRING', optional: false, isWidget: false },
+        ],
+        moduleCode: 'from transformers import pipeline',
+        code: 'enhanced_prompt = prompt',
+      },
+    })
+    const selectResult = await applyBuilderAction(projectStore, uiStore, {
+      type: 'select_node',
+    })
+
+    expect(updateResult.level).toBe('success')
+    expect(updateResult.message).toBe('Created node SmallLLMPromptEnhancer.')
+    expect(selectResult.level).toBe('success')
+    expect(projectStore.project).toMatchObject({
+      name: 'LLM Prompt Tools',
+      packFolderName: 'LLM_Prompt_Tools',
+      pythonRequirements: ['transformers', 'torch', 'accelerate'],
+    })
+    expect(projectStore.project.nodes).toHaveLength(1)
+    expect(projectStore.project.nodes[0]).toMatchObject({
+      name: 'SmallLLMPromptEnhancer',
+      displayName: 'Small LLM Prompt Enhancer',
+      category: 'ComfyUINodeBuilder/AI',
+      moduleCode: 'from transformers import pipeline',
+      code: 'enhanced_prompt = prompt',
+    })
+    expect(uiStore.selectedNodeId).toBe(projectStore.project.nodes[0].id)
+  })
+
+  it('updates the only node when AI sends targetless update_node without a selection', async () => {
+    const projectStore = useProjectStore()
+    const uiStore = useUiStore()
+    projectStore.addNode('blank')
+
+    const result = await applyBuilderAction(projectStore, uiStore, {
+      type: 'update_node',
+      patch: {
+        name: 'TinyLLMImagePrompt',
+        displayName: 'Tiny LLM Image Prompt',
+        category: 'ComfyUINodeBuilder/AI',
+      },
+    })
+
+    expect(result.level).toBe('success')
+    expect(projectStore.project.nodes).toHaveLength(1)
+    expect(projectStore.project.nodes[0]).toMatchObject({
+      name: 'TinyLLMImagePrompt',
+      displayName: 'Tiny LLM Image Prompt',
+      category: 'ComfyUINodeBuilder/AI',
+    })
+    expect(uiStore.selectedNodeId).toBe(projectStore.project.nodes[0].id)
+  })
+
   it('validates the active project and reports validation errors', async () => {
     const projectStore = useProjectStore()
     const uiStore = useUiStore()

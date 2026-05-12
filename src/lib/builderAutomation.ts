@@ -5,6 +5,7 @@ import type { useUiStore } from '../stores/ui'
 import { validateProject } from './validate'
 import { normalizeCustomNodeFilePath } from './nodeFilePaths'
 import type { BuilderAction } from './aiActionPlan'
+import type { NodeTemplateId } from './nodeTemplates'
 import { RETURN_UI_KINDS } from './returnUiCatalog'
 
 type ProjectStore = ReturnType<typeof useProjectStore>
@@ -65,10 +66,45 @@ function normalizeUiOutput(output: UiOutputDraft): UiOutputSpec {
   }
 }
 
-function findNode(project: Project, nodeId?: string, nodeName?: string): NodeSpec | null {
+interface FindNodeOptions {
+  fallbackNodeId?: string | null
+  useOnlyNodeFallback?: boolean
+}
+
+function findNode(project: Project, nodeId?: string, nodeName?: string, options: FindNodeOptions = {}): NodeSpec | null {
   if (nodeId) return project.nodes.find(node => node.id === nodeId) ?? null
   if (nodeName) return project.nodes.find(node => node.name === nodeName || node.displayName === nodeName) ?? null
+  if (options.fallbackNodeId) return project.nodes.find(node => node.id === options.fallbackNodeId) ?? null
+  if (options.useOnlyNodeFallback && project.nodes.length === 1) return project.nodes[0]
   return null
+}
+
+function normalizeNodePatch(patch: Partial<NodeSpec>, fallback?: NodeSpec): Partial<NodeSpec> {
+  const normalized = { ...patch }
+  if (normalized.inputs) normalized.inputs = normalized.inputs.map(normalizePort)
+  else if (fallback) normalized.inputs = fallback.inputs
+  if (normalized.outputs) normalized.outputs = normalized.outputs.map(normalizePort)
+  else if (fallback) normalized.outputs = fallback.outputs
+  if (normalized.widgets) normalized.widgets = normalized.widgets.map(normalizeWidget)
+  else if (fallback) normalized.widgets = fallback.widgets
+  if (normalized.uiOutputs) normalized.uiOutputs = normalized.uiOutputs.map(normalizeUiOutput)
+  else if (fallback) normalized.uiOutputs = fallback.uiOutputs
+  return normalized
+}
+
+function createNodeFromPatch(
+  projectStore: ProjectStore,
+  uiStore: UiStore,
+  templateId: NodeTemplateId | undefined,
+  patch: Partial<NodeSpec>,
+): NodeSpec {
+  const node = projectStore.addNode(templateId || 'blank')
+  projectStore.updateNode(node.id, {
+    ...normalizeNodePatch(patch, node),
+    customFiles: [],
+  })
+  uiStore.selectNode(node.id)
+  return projectStore.project.nodes.find(candidate => candidate.id === node.id) ?? node
 }
 
 function upsertCustomFile(files: CustomNodeFileSpec[], relativePath: string, content: string): CustomNodeFileSpec[] {
@@ -106,28 +142,21 @@ export async function applyBuilderAction(
       return { level: 'success', message: `Renamed pack to ${projectStore.project.name} (${projectStore.project.packFolderName}).` }
     }
     case 'create_node': {
-      const node = projectStore.addNode(action.templateId || 'blank')
-      const patch = action.node ?? {}
-      projectStore.updateNode(node.id, {
-        ...patch,
-        inputs: patch.inputs?.map(normalizePort) ?? node.inputs,
-        outputs: patch.outputs?.map(normalizePort) ?? node.outputs,
-        widgets: patch.widgets?.map(normalizeWidget) ?? node.widgets,
-        uiOutputs: patch.uiOutputs?.map(normalizeUiOutput) ?? node.uiOutputs,
-        customFiles: [],
-      })
-      uiStore.selectNode(node.id)
-      return { level: 'success', message: `Created node ${projectStore.project.nodes.find(candidate => candidate.id === node.id)?.name ?? node.name}.` }
+      const node = createNodeFromPatch(projectStore, uiStore, action.templateId, action.node ?? {})
+      return { level: 'success', message: `Created node ${node.name}.` }
     }
     case 'update_node': {
-      const node = findNode(projectStore.project, action.nodeId, action.nodeName)
-      if (!node) return { level: 'error', message: `Node not found: ${action.nodeId || action.nodeName || 'unnamed'}` }
       const patch = { ...(action.patch ?? action.node ?? {}) }
-      if (patch.inputs) patch.inputs = patch.inputs.map(normalizePort)
-      if (patch.outputs) patch.outputs = patch.outputs.map(normalizePort)
-      if (patch.widgets) patch.widgets = patch.widgets.map(normalizeWidget)
-      if (patch.uiOutputs) patch.uiOutputs = patch.uiOutputs.map(normalizeUiOutput)
-      projectStore.updateNode(node.id, patch)
+      const node = findNode(projectStore.project, action.nodeId, action.nodeName, {
+        fallbackNodeId: uiStore.selectedNodeId,
+        useOnlyNodeFallback: true,
+      })
+      if (!node && projectStore.project.nodes.length === 0 && Object.keys(patch).length > 0) {
+        const createdNode = createNodeFromPatch(projectStore, uiStore, 'blank', patch)
+        return { level: 'success', message: `Created node ${createdNode.name}.` }
+      }
+      if (!node) return { level: 'error', message: `Node not found: ${action.nodeId || action.nodeName || 'unnamed'}` }
+      projectStore.updateNode(node.id, normalizeNodePatch(patch))
       uiStore.selectNode(node.id)
       return { level: 'success', message: `Updated node ${node.name}.` }
     }
@@ -160,7 +189,10 @@ export async function applyBuilderAction(
       return { level: 'success', message: `Deleted ${action.relativePath}.` }
     }
     case 'select_node': {
-      const node = findNode(projectStore.project, action.nodeId, action.nodeName)
+      const node = findNode(projectStore.project, action.nodeId, action.nodeName, {
+        fallbackNodeId: uiStore.selectedNodeId,
+        useOnlyNodeFallback: true,
+      })
       if (!node) return { level: 'error', message: `Node not found: ${action.nodeId || action.nodeName || 'unnamed'}` }
       uiStore.selectNode(node.id)
       return { level: 'success', message: `Selected node ${node.name}.` }
