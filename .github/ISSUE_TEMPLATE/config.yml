@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Quick Start
+    url: https://github.com/caoool/comfyui-node-canvas#quick-start
+    about: Install and run ComfyUI Node Builder for the first time.
+  - name: Wiki / Detailed Guide
+    url: https://github.com/caoool/comfyui-node-canvas/blob/main/docs/wiki/index.md
+    about: Read setup, node creation, deployment, project structure, and troubleshooting docs.
+  - name: Landing Page
+    url: https://caoool.github.io/comfyui-node-canvas/
+    about: See the short product overview, screenshots, and AI workflow demo.

@@ -1,0 +1,41 @@
+# ComfyUI Node Builder
+
+> ComfyUI Node Builder is a local AI-powered GUI app for building, editing, validating, deploying, and testing custom ComfyUI nodes and full node packs.
+
+## Primary URLs
+
+- Landing page: https://caoool.github.io/comfyui-node-canvas/
+- GitHub repository: https://github.com/caoool/comfyui-node-canvas
+- Quick Start: https://github.com/caoool/comfyui-node-canvas#quick-start
+- Wiki / detailed guide: https://github.com/caoool/comfyui-node-canvas/blob/main/docs/wiki/index.md
+- Issues and feature requests: https://github.com/caoool/comfyui-node-canvas/issues
+
+## Short Description
+
+ComfyUI Node Builder helps ComfyUI users create custom nodes and complete node packs without manually rebuilding boilerplate each time. It provides a visual node contract editor, generated pack files, direct Python editing, AI-assisted authoring, validation, ZIP export, and managed deployment into a local ComfyUI installation.
+
+## Who It Is For
+
+- ComfyUI custom node authors
+- ComfyUI workflow builders
+- Python developers building ComfyUI extensions
+- AI-assisted prototypers who want visible code changes and validation
+- Builders creating simple nodes or more complicated packs with dependencies, install scripts, Return UI, and runtime frontend displays
+
+## AI Features
+
+- Create packs and nodes from a plain-language prompt
+- Edit generated node files and Python code
+- Explain validation and terminal errors
+- Validate generated packs
+- Run terminal checks in the pack workspace
+- Request deployment when the user enables deploy permission
+- Work with OpenAI, OpenRouter, OpenAI-compatible servers, Anthropic, Gemini, and Ollama providers
+
+## Suggested Summary
+
+ComfyUI Node Builder is an open-source local GUI app for building custom ComfyUI nodes and node packs with AI assistance. It is useful for ComfyUI node authors, workflow builders, and Python developers who want to move from an idea to a deployable ComfyUI node faster while keeping generated files visible and editable.
+
+## Keywords
+
+ComfyUI, ComfyUI custom nodes, ComfyUI node builder, AI node builder, GUI node editor, Python node pack, ComfyUI workflow, custom node development, ComfyUI 自定义节点, ComfyUI 节点构建器

@@ -6,30 +6,115 @@
     <meta name="format-detection" content="telephone=no" />
     <meta name="theme-color" content="#07c160" />
     <meta name="color-scheme" content="dark light" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta name="author" content="caoool" />
+    <meta name="application-name" content="ComfyUI Node Builder" />
     <title>ComfyUI Node Builder · AI GUI for Custom Nodes</title>
     <meta
       name="description"
-      content="A bilingual landing page for ComfyUI Node Builder, a GUI app that helps you build custom ComfyUI nodes and complex node packs with AI."
+      content="ComfyUI Node Builder is a local AI-powered GUI app for building, editing, validating, deploying, and testing custom ComfyUI nodes and full node packs."
     />
     <meta
       name="keywords"
-      content="ComfyUI, custom node, ComfyUI custom node, AI builder, GUI node editor, Python node pack, ComfyUI node pack, ComfyUI 节点, 自定义节点, AI"
+      content="ComfyUI, ComfyUI custom node, custom nodes, ComfyUI node builder, AI node builder, GUI node editor, Python node pack, ComfyUI node pack, ComfyUI workflow, ComfyUI 节点, ComfyUI 自定义节点, AI 节点构建器"
     />
     <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="ComfyUI Node Builder" />
     <meta property="og:url" content="https://caoool.github.io/comfyui-node-canvas/" />
     <meta property="og:title" content="ComfyUI Node Builder · AI GUI for Custom Nodes" />
     <meta
       property="og:description"
-      content="Build ComfyUI custom nodes with a visual GUI and an AI Builder that can create, edit, validate, test, and deploy node packs."
+      content="Build custom ComfyUI nodes and complex node packs with a visual GUI, direct Python editing, AI-assisted authoring, validation, deployment, and testing."
     />
     <meta property="og:image" content="https://caoool.github.io/comfyui-node-canvas/ai-builder.png" />
+    <meta property="og:image:alt" content="ComfyUI Node Builder AI panel creating and editing a custom node pack." />
+    <meta property="og:image:width" content="1600" />
+    <meta property="og:image:height" content="900" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale:alternate" content="zh_CN" />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="ComfyUI Node Builder · AI GUI for Custom Nodes" />
+    <meta
+      name="twitter:description"
+      content="A local GUI app for building custom ComfyUI nodes and full node packs with AI doing the heavy lifting."
+    />
+    <meta name="twitter:image" content="https://caoool.github.io/comfyui-node-canvas/ai-builder.png" />
     <link rel="canonical" href="https://caoool.github.io/comfyui-node-canvas/" />
     <link rel="alternate" hreflang="x-default" href="https://caoool.github.io/comfyui-node-canvas/" />
     <link rel="alternate" hreflang="en" href="https://caoool.github.io/comfyui-node-canvas/?lang=en" />
     <link rel="alternate" hreflang="zh-CN" href="https://caoool.github.io/comfyui-node-canvas/?lang=zh" />
+    <link rel="sitemap" type="application/xml" href="https://caoool.github.io/comfyui-node-canvas/sitemap.xml" />
+    <link rel="alternate" type="text/plain" href="https://caoool.github.io/comfyui-node-canvas/llms.txt" />
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2307090f'/%3E%3Cpath d='M32 10 54 32 32 54 10 32Z' fill='none' stroke='%2307c160' stroke-width='5'/%3E%3Ccircle cx='32' cy='32' r='7' fill='%235b6cff'/%3E%3C/svg%3E" />
     <link rel="stylesheet" href="styles.css" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "SoftwareApplication",
+            "@id": "https://caoool.github.io/comfyui-node-canvas/#software",
+            "name": "ComfyUI Node Builder",
+            "url": "https://caoool.github.io/comfyui-node-canvas/",
+            "codeRepository": "https://github.com/caoool/comfyui-node-canvas",
+            "applicationCategory": "DeveloperApplication",
+            "operatingSystem": "Windows, macOS, Linux",
+            "programmingLanguage": ["TypeScript", "Vue", "Python"],
+            "description": "ComfyUI Node Builder is a local AI-powered GUI app for building, editing, validating, deploying, and testing custom ComfyUI nodes and full node packs.",
+            "keywords": "ComfyUI, custom nodes, ComfyUI node builder, AI node builder, GUI node editor, Python node pack",
+            "image": "https://caoool.github.io/comfyui-node-canvas/ai-builder.png",
+            "offers": {
+              "@type": "Offer",
+              "price": "0",
+              "priceCurrency": "USD"
+            },
+            "creator": {
+              "@type": "Person",
+              "name": "caoool",
+              "url": "https://github.com/caoool"
+            }
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://caoool.github.io/comfyui-node-canvas/#website",
+            "name": "ComfyUI Node Builder",
+            "url": "https://caoool.github.io/comfyui-node-canvas/",
+            "inLanguage": ["en", "zh-CN"],
+            "description": "A concise bilingual landing page for an AI-powered GUI that builds ComfyUI custom nodes and node packs."
+          },
+          {
+            "@type": "FAQPage",
+            "@id": "https://caoool.github.io/comfyui-node-canvas/#faq",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "What is ComfyUI Node Builder?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "ComfyUI Node Builder is a local GUI app for creating custom ComfyUI nodes and full node packs. It combines a visual node contract editor, editable generated Python files, validation, deployment, and AI-assisted authoring."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Who should use ComfyUI Node Builder?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "It is for ComfyUI node authors, workflow builders, Python developers, and AI-assisted prototypers who want to build simple nodes or complicated node packs faster."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "What can the AI Builder do?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "The AI Builder can create nodes from prompts, edit generated files, explain errors, validate packs, run terminal checks, and request deployment when the user enables deploy permission."
+                }
+              }
+            ]
+          }
+        ]
+      }
+    </script>
   </head>
   <body>
     <header id="hdr">
@@ -163,6 +248,35 @@
             <h3 data-en="Ship complicated packs" data-zh="交付复杂节点包">Ship complicated packs</h3>
             <p data-en="Keep direct control of Python, requirements, install scripts, generated mappings, runtime UI, ZIP export, and managed ComfyUI deploy." data-zh="保留对 Python、requirements、安装脚本、映射文件、运行时 UI、ZIP 导出和 ComfyUI 托管部署的直接控制。">
               Keep direct control of Python, requirements, install scripts, generated mappings, runtime UI, ZIP export, and managed ComfyUI deploy.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section id="faq" class="wrap answer-section">
+        <div class="section-head center">
+          <div class="section-eyebrow" data-en="Quick answers" data-zh="快速了解">Quick answers</div>
+          <h2 data-en="For search, AI answers, and first-time visitors." data-zh="给搜索、AI 摘要和第一次访问的用户。">
+            For search, AI answers, and first-time visitors.
+          </h2>
+        </div>
+        <div class="answer-grid">
+          <article>
+            <h3 data-en="What is it?" data-zh="这是什么？">What is it?</h3>
+            <p data-en="A local GUI app for building custom ComfyUI nodes and full node packs with AI-assisted authoring, editable Python, validation, deployment, and testing." data-zh="一个本地 GUI 应用，用 AI 辅助创建 ComfyUI 自定义节点和完整节点包，同时保留 Python 编辑、验证、部署和测试。">
+              A local GUI app for building custom ComfyUI nodes and full node packs with AI-assisted authoring, editable Python, validation, deployment, and testing.
+            </p>
+          </article>
+          <article>
+            <h3 data-en="Who is it for?" data-zh="适合谁？">Who is it for?</h3>
+            <p data-en="ComfyUI node authors, workflow builders, Python developers, and AI-assisted prototypers who want to move from idea to working node faster." data-zh="适合 ComfyUI 节点作者、工作流构建者、Python 开发者，以及想更快从想法做出可用节点的 AI 原型用户。">
+              ComfyUI node authors, workflow builders, Python developers, and AI-assisted prototypers who want to move from idea to working node faster.
+            </p>
+          </article>
+          <article>
+            <h3 data-en="Why use it?" data-zh="为什么用它？">Why use it?</h3>
+            <p data-en="It removes repetitive node-pack boilerplate while keeping the real files visible, editable, validated, and ready to deploy into ComfyUI." data-zh="它减少重复的节点包样板代码，同时让真实文件保持可见、可编辑、可验证，并可部署到 ComfyUI。">
+              It removes repetitive node-pack boilerplate while keeping the real files visible, editable, validated, and ready to deploy into ComfyUI.
             </p>
           </article>
         </div>

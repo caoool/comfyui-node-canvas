@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://caoool.github.io/comfyui-node-canvas/sitemap.xml

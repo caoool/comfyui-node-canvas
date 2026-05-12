@@ -1,0 +1,30 @@
+name: Node idea
+description: Share a ComfyUI custom node or node pack you want the AI Builder to create.
+title: "[Node idea]: "
+labels: ["node-idea"]
+body:
+  - type: textarea
+    id: prompt
+    attributes:
+      label: Plain-language node request
+      description: Write the prompt you wish you could give the AI Builder.
+      placeholder: I want to build a node that takes a simple string prompt and uses a small LLM to output an image-generation prompt.
+    validations:
+      required: true
+  - type: textarea
+    id: inputs-outputs
+    attributes:
+      label: Expected inputs and outputs
+      description: List the ComfyUI inputs, widgets, outputs, and data types if you know them.
+      placeholder: "Input: prompt STRING. Output: enhanced_prompt STRING."
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies or models
+      description: Include Python packages, model providers, checkpoints, APIs, or local files if relevant.
+      placeholder: transformers, llama-cpp-python, OpenAI-compatible API, Ollama...
+  - type: textarea
+    id: success
+    attributes:
+      label: What should success look like?
+      description: Describe the ComfyUI workflow result you want to see after the node is generated.

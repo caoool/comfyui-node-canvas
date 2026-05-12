@@ -1,0 +1,41 @@
+name: Bug report
+description: Report something that is broken in ComfyUI Node Builder.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Clear reproduction steps help fix issues faster.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Describe the behavior you saw and what you expected instead.
+      placeholder: The AI Builder said validation passed, but deploy failed with...
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: List the exact steps, prompt, node settings, or file edits that triggered the issue.
+      placeholder: |
+        1. Open the app
+        2. Create a new pack
+        3. Ask AI to...
+        4. Click...
+    validations:
+      required: true
+  - type: input
+    id: comfyui-path
+    attributes:
+      label: ComfyUI setup
+      description: Include OS, ComfyUI install type, and whether deploy was enabled.
+      placeholder: Windows 11, portable ComfyUI, Allow deploy enabled
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or screenshots
+      description: Paste terminal logs, validation output, screenshots, or the AI action log if relevant.
+      render: shell

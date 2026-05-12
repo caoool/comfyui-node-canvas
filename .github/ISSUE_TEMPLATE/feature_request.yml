@@ -1,0 +1,38 @@
+name: Feature request
+description: Suggest an improvement to the GUI, AI Builder, deployment flow, or generated packs.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or workflow gap
+      description: What are you trying to do that is hard today?
+      placeholder: I want to build a node pack with shared utility files and...
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Suggested solution
+      description: Describe the feature or behavior you want.
+      placeholder: Add a shared-files editor so AI can...
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - AI Builder
+        - Visual node contract editor
+        - Python/code editor
+        - Validation/testing
+        - Deployment/export
+        - Documentation
+        - Other
+  - type: textarea
+    id: context
+    attributes:
+      label: Extra context
+      description: Add screenshots, example node packs, or links that explain the request.
