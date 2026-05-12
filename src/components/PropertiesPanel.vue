@@ -44,15 +44,15 @@ const selectedNode = computed(() => {
   background: var(--panel);
 }
 .properties-header {
-  padding: 8px 10px;
+  padding: 12px 14px;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
 .properties-title {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
   color: var(--text-dim);
 }
 .properties-body {
@@ -60,9 +60,10 @@ const selectedNode = computed(() => {
   overflow-y: auto;
 }
 .no-selection {
-  padding: 16px;
+  padding: 32px 16px;
   font-size: 12px;
-  color: var(--text-dim);
+  color: var(--text-muted);
   text-align: center;
+  font-style: italic;
 }
 </style>

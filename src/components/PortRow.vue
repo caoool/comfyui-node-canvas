@@ -10,38 +10,36 @@
     ></span>
     <span class="port-name">{{ port.name }}</span>
     <span class="port-type">{{ port.type }}</span>
+    <span v-if="widget" class="port-widget">{{ widget.widgetType }}</span>
     <span v-if="port.optional" class="port-optional">opt</span>
     <button class="btn-remove" @click.stop="emit('remove', port.id)" title="Remove">×</button>
   </div>
 </template>
 
 <script setup lang="ts">
-import type { PortSpec } from '../types/index'
+import type { PortSpec, WidgetSpec } from '../types/index'
+import { useUiStore } from '../stores/ui'
+import { portColor } from '../lib/comfyCatalog'
 
 const props = defineProps<{
   port: PortSpec
   isActive: boolean
   zone: 'inputs' | 'outputs'
+  widget?: WidgetSpec
 }>()
 
 const emit = defineEmits<{
   remove: [id: string]
 }>()
 
-const PORT_COLORS: Record<string, string> = {
-  IMAGE: '#9370ff', LATENT: '#ff70a0', FLOAT: '#cc88ff',
-  INT: '#5599ff', STRING: '#ccaa44', MASK: '#79a9a0',
-  CONDITIONING: '#fca33f', MODEL: '#6eb5b5', VAE: '#b56eb5', CLIP: '#b5b56e',
-}
-function portColor(type: string): string {
-  return PORT_COLORS[type] ?? '#888'
-}
-
-import { useUiStore } from '../stores/ui'
 const uiStore = useUiStore()
 
 function onClick() {
-  uiStore.selectPort(props.port.id, props.zone)
+  if (props.widget) {
+    uiStore.selectWidget(props.widget.id)
+  } else {
+    uiStore.selectPort(props.port.id, props.zone)
+  }
 }
 </script>
 
@@ -49,41 +47,82 @@ function onClick() {
 .port-row {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 5px 8px;
-  border-radius: 4px;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: var(--r-sm);
   cursor: pointer;
   font-size: 12px;
+  transition: background 100ms ease;
+  position: relative;
 }
-.port-row:hover { background: var(--header); }
-.port-row-active { background: var(--header); outline: 1px solid var(--accent); }
+.port-row:hover { background: var(--hover); }
+.port-row:hover .btn-remove { opacity: 1; }
+.port-row-active {
+  background: var(--accent-soft);
+}
+.port-row-active::before {
+  content: '';
+  position: absolute;
+  left: -2px;
+  top: 4px;
+  bottom: 4px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--accent);
+}
 .port-dot {
   width: 10px;
   height: 10px;
   border-radius: 50%;
   flex-shrink: 0;
+  box-shadow: 0 0 0 2px rgba(0,0,0,0.35);
 }
-.port-name { color: var(--text); flex: 1; }
-.port-type { color: var(--text-dim); font-size: 11px; }
-.port-optional {
+.port-name {
+  color: var(--text);
+  flex: 1;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+}
+.port-type {
   color: var(--text-dim);
+  font-size: 10.5px;
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+}
+.port-widget {
+  color: var(--accent);
   font-size: 10px;
-  background: var(--node-body);
-  padding: 1px 4px;
-  border-radius: 3px;
+  background: var(--accent-soft);
+  padding: 1px 6px;
+  border-radius: 999px;
+  text-transform: lowercase;
+  letter-spacing: 0.04em;
+  font-weight: 500;
+}
+.port-optional {
+  color: var(--text-muted);
+  font-size: 10px;
+  background: var(--bg);
+  padding: 1px 6px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  font-family: var(--font-mono);
 }
 .btn-remove {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   background: none;
-  color: var(--text-dim);
+  color: var(--text-muted);
   border: none;
   cursor: pointer;
   font-size: 12px;
-  border-radius: 3px;
+  border-radius: var(--r-sm);
   display: flex;
   align-items: center;
   justify-content: center;
+  opacity: 0;
+  transition: opacity 100ms ease, background 100ms ease, color 100ms ease;
 }
-.btn-remove:hover { background: #c62828; color: #fff; }
+.btn-remove:hover { background: var(--danger-soft); color: var(--danger); }
 </style>

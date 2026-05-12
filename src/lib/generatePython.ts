@@ -1,8 +1,18 @@
 import type { NodeSpec, PortSpec, WidgetSpec } from '../types/index'
+import { buildGeneratedReturnCode } from './returnCode'
 
 function formatValue(value: unknown): string {
-  if (typeof value === 'string') return `"${value}"`
-  if (typeof value === 'boolean') return value ? 'true' : 'false'
+  if (value === undefined || value === null) return 'None'
+  if (typeof value === 'string') return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
+  if (typeof value === 'boolean') return value ? 'True' : 'False'
+  if (typeof value === 'number') return Number.isFinite(value) ? String(value) : 'None'
+  if (Array.isArray(value)) return `[${value.map(formatValue).join(', ')}]`
+  if (typeof value === 'object') {
+    const entries = Object.entries(value as Record<string, unknown>)
+      .filter(([, v]) => v !== undefined)
+      .map(([k, v]) => `${formatValue(k)}: ${formatValue(v)}`)
+    return `{${entries.join(', ')}}`
+  }
   return String(value)
 }
 
@@ -19,28 +29,42 @@ function formatPortEntry(port: PortSpec, widget: WidgetSpec | undefined): string
 
   switch (widget.widgetType) {
     case 'slider':
-    case 'int': {
+    case 'number':
+    case 'int':
+    case 'seed': {
       const cfg = widget.config as Record<string, unknown>
-      const min = cfg.min
-      const max = cfg.max
-      const step = cfg.step
-      const def = cfg.default
       const entries: string[] = []
-      if (def !== undefined) entries.push(`"default": ${formatValue(def)}`)
-      if (min !== undefined) entries.push(`"min": ${formatValue(min)}`)
-      if (max !== undefined) entries.push(`"max": ${formatValue(max)}`)
-      if (step !== undefined) entries.push(`"step": ${formatValue(step)}`)
-      const pyType = port.type // FLOAT or INT as specified by port
-      return `"${port.name}": ("${pyType}", {${entries.join(', ')}})`
+      if (widget.default !== undefined) entries.push(`"default": ${formatValue(widget.default)}`)
+      for (const [key, value] of Object.entries(cfg)) {
+        if (value !== undefined && key !== 'default') entries.push(`"${key}": ${formatValue(value)}`)
+      }
+      return `"${port.name}": ("${port.type}", {${entries.join(', ')}})`
     }
-    case 'dropdown': {
-      const cfg = widget.config as { options: string[] }
-      const options = cfg.options.map(o => `"${o}"`).join(', ')
+    case 'dropdown':
+    case 'dynamic_combo': {
+      const cfg = widget.config as { options?: string[] }
+      const options = (cfg.options ?? []).map(o => formatValue(o)).join(', ')
       const def = formatValue(widget.default)
       return `"${port.name}": ([${options}], {"default": ${def}})`
     }
-    case 'text': {
-      return `"${port.name}": ("${port.type}", {"multiline": false})`
+    case 'text':
+    case 'multiline':
+    case 'json':
+    case 'file':
+    case 'image_upload':
+    case 'video_upload':
+    case 'audio_upload':
+    case 'color':
+    case 'autogrow':
+    case 'matchtype':
+    case 'bounding_box':
+    case 'curve':
+    case 'list': {
+      const cfg = { ...widget.config }
+      if (widget.widgetType === 'text' && cfg.multiline === undefined) cfg.multiline = false
+      if (widget.widgetType === 'multiline' && cfg.multiline === undefined) cfg.multiline = true
+      if (widget.default !== undefined) cfg.default = widget.default
+      return `"${port.name}": ("${port.type}", ${formatValue(cfg)})`
     }
     case 'bool': {
       return `"${port.name}": ("BOOLEAN", {"default": ${formatValue(widget.default)}})`
@@ -54,6 +78,11 @@ export function generatePython(node: NodeSpec): string {
   const lines: string[] = []
 
   const className = node.name
+  const moduleCode = node.moduleCode?.trim()
+  if (moduleCode) {
+    lines.push(moduleCode)
+    lines.push(``)
+  }
 
   // Build widget lookup by portId
   const widgetByPortId = new Map<string, WidgetSpec>()
@@ -105,17 +134,22 @@ export function generatePython(node: NodeSpec): string {
   lines.push(``)
 
   // RETURN_TYPES
-  const returnTypesTuple = formatTuple(node.returnTypes)
+  const returnTypes = node.useReturnOverrides ? node.returnTypes : node.outputs.map(p => p.type)
+  const returnNames = node.useReturnOverrides ? node.returnNames : node.outputs.map(p => p.name)
+  const returnTypesTuple = formatTuple(returnTypes)
   lines.push(`    RETURN_TYPES = ${returnTypesTuple}`)
 
   // RETURN_NAMES (omit if empty)
-  if (node.returnNames.length > 0) {
-    const returnNamesTuple = formatTuple(node.returnNames)
+  if (returnNames.length > 0) {
+    const returnNamesTuple = formatTuple(returnNames)
     lines.push(`    RETURN_NAMES = ${returnNamesTuple}`)
   }
 
   lines.push(`    FUNCTION = "execute"`)
   lines.push(`    CATEGORY = "${node.category}"`)
+  if (node.isOutputNode) {
+    lines.push(`    OUTPUT_NODE = True`)
+  }
   lines.push(``)
 
   // execute method signature
@@ -125,12 +159,13 @@ export function generatePython(node: NodeSpec): string {
   lines.push(`    def execute(${allParams}):`)
 
   // execute method body
-  if (node.code.trim() === '') {
-    lines.push(`        pass`)
-  } else {
+  if (node.code.trim() !== '') {
     for (const codeLine of node.code.split('\n')) {
       lines.push(codeLine === '' ? '' : `        ${codeLine}`)
     }
+  }
+  for (const returnLine of buildGeneratedReturnCode(node).split('\n')) {
+    lines.push(`        ${returnLine}`)
   }
 
   lines.push(``)
