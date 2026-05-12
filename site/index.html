@@ -3,247 +3,280 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>ComfyUI Node Builder</title>
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="theme-color" content="#07c160" />
+    <meta name="color-scheme" content="dark light" />
+    <title>ComfyUI Node Builder · AI GUI for Custom Nodes</title>
     <meta
       name="description"
-      content="A local workbench for designing, editing, validating, exporting, and deploying ComfyUI custom node packs."
+      content="A bilingual landing page for ComfyUI Node Builder, a GUI app that helps you build custom ComfyUI nodes and complex node packs with AI."
     />
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23081018'/%3E%3Cpath d='M32 11 53 32 32 53 11 32Z' fill='none' stroke='%2369a7ff' stroke-width='5'/%3E%3C/svg%3E" />
+    <meta
+      name="keywords"
+      content="ComfyUI, custom node, ComfyUI custom node, AI builder, GUI node editor, Python node pack, ComfyUI node pack, ComfyUI 节点, 自定义节点, AI"
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://caoool.github.io/comfyui-node-canvas/" />
+    <meta property="og:title" content="ComfyUI Node Builder · AI GUI for Custom Nodes" />
+    <meta
+      property="og:description"
+      content="Build ComfyUI custom nodes with a visual GUI and an AI Builder that can create, edit, validate, test, and deploy node packs."
+    />
+    <meta property="og:image" content="https://caoool.github.io/comfyui-node-canvas/ai-builder.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="canonical" href="https://caoool.github.io/comfyui-node-canvas/" />
+    <link rel="alternate" hreflang="x-default" href="https://caoool.github.io/comfyui-node-canvas/" />
+    <link rel="alternate" hreflang="en" href="https://caoool.github.io/comfyui-node-canvas/?lang=en" />
+    <link rel="alternate" hreflang="zh-CN" href="https://caoool.github.io/comfyui-node-canvas/?lang=zh" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2307090f'/%3E%3Cpath d='M32 10 54 32 32 54 10 32Z' fill='none' stroke='%2307c160' stroke-width='5'/%3E%3Ccircle cx='32' cy='32' r='7' fill='%235b6cff'/%3E%3C/svg%3E" />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <header class="site-header" aria-label="Primary navigation">
-      <a class="brand" href="https://github.com/caoool/comfyui-node-canvas" aria-label="ComfyUI Node Builder GitHub repository">
-        <span class="brand-mark" aria-hidden="true">◇</span>
-        <span>ComfyUI Node Builder</span>
-      </a>
-      <nav class="nav-links" aria-label="Page links">
-        <a href="https://github.com/caoool/comfyui-node-canvas">GitHub</a>
-        <a href="https://github.com/caoool/comfyui-node-canvas#readme">README</a>
-        <a class="nav-primary" href="https://github.com/caoool/comfyui-node-canvas/blob/main/docs/wiki/index.md">Start with the Wiki</a>
-      </nav>
+    <header id="hdr">
+      <div class="wrap nav">
+        <a class="brand" href="https://github.com/caoool/comfyui-node-canvas" aria-label="ComfyUI Node Builder on GitHub">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 32 32" fill="none">
+              <path d="M16 4 28 16 16 28 4 16Z" stroke="currentColor" stroke-width="2.4" />
+              <circle cx="16" cy="16" r="3.5" fill="currentColor" />
+            </svg>
+          </span>
+          <span class="brand-name">ComfyUI <span>Node Builder</span></span>
+        </a>
+
+        <nav class="nav-links" aria-label="Primary navigation">
+          <a href="#screenshots" data-en="Screenshots" data-zh="截图">Screenshots</a>
+          <a href="https://github.com/caoool/comfyui-node-canvas#quick-start" data-en="Quick Start" data-zh="快速开始">Quick Start</a>
+          <a href="https://github.com/caoool/comfyui-node-canvas" data-en="GitHub" data-zh="GitHub">GitHub</a>
+        </nav>
+
+        <div class="nav-actions">
+          <div class="lang-toggle" aria-label="Language">
+            <button type="button" data-set-lang="en">EN</button>
+            <button type="button" data-set-lang="zh">中文</button>
+          </div>
+          <a class="gh-btn" href="https://github.com/caoool/comfyui-node-canvas" aria-label="Star ComfyUI Node Builder on GitHub">
+            <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+              <path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.75.75 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z" />
+            </svg>
+            <span data-en="Star" data-zh="加星">Star</span>
+            <span id="starCount" class="star-count">--</span>
+          </a>
+        </div>
+      </div>
     </header>
 
     <main>
-      <section class="hero" aria-labelledby="hero-title">
-        <img class="hero-bg" src="polished-populated.png" alt="" aria-hidden="true" />
-        <div class="hero-shade" aria-hidden="true"></div>
-        <div class="hero-content">
-          <h1 id="hero-title">Build ComfyUI custom nodes without rebuilding boilerplate.</h1>
-          <p class="hero-copy">
-            ComfyUI Node Builder is a local workbench for designing node contracts, editing generated Python,
-            packaging dependencies, and deploying managed custom node packs into ComfyUI.
-          </p>
-          <div class="hero-actions">
-            <a class="button button-primary" href="https://github.com/caoool/comfyui-node-canvas/blob/main/docs/wiki/index.md">
-              Start with the Wiki
-            </a>
-            <a class="button button-secondary" href="https://github.com/caoool/comfyui-node-canvas">
-              View on GitHub
-            </a>
+      <section class="hero">
+        <div class="wrap hero-grid">
+          <div class="hero-copy">
+            <div class="badge">
+              <span class="badge-dot" aria-hidden="true"></span>
+              <span data-en="AI-powered GUI for ComfyUI custom nodes" data-zh="面向 ComfyUI 自定义节点的 AI GUI">AI-powered GUI for ComfyUI custom nodes</span>
+            </div>
+            <h1 data-en="Build powerful ComfyUI custom node packs with GUI and AI." data-zh="用 GUI 和 AI 构建强大的 ComfyUI 自定义节点包。">
+              Build powerful ComfyUI custom node packs with GUI and AI.
+            </h1>
+            <p class="hero-sub" data-en="ComfyUI Node Builder is a local GUI app for creating custom nodes and full node packs with ease. Design the node contract visually, edit Python directly, then use AI to create, revise, validate, test, and deploy more complicated packs." data-zh="ComfyUI Node Builder 是一个本地 GUI 应用，用来轻松创建自定义节点和完整节点包。你可以可视化设计节点接口、直接编辑 Python，再用 AI 创建、修改、验证、测试和部署更复杂的节点包。">
+              ComfyUI Node Builder is a local GUI app for creating custom nodes and full node packs with ease. Design the node contract visually, edit Python directly, then use AI to create, revise, validate, test, and deploy more complicated packs.
+            </p>
+            <div class="hero-cta">
+              <a class="btn btn-primary" href="https://github.com/caoool/comfyui-node-canvas#quick-start">
+                <span data-en="Quick Start" data-zh="快速开始">Quick Start</span>
+              </a>
+              <a class="btn btn-ghost" href="https://github.com/caoool/comfyui-node-canvas">
+                <span data-en="View GitHub" data-zh="查看 GitHub">View GitHub</span>
+              </a>
+              <a class="btn btn-star" href="https://github.com/caoool/comfyui-node-canvas">
+                <span data-en="Star this project" data-zh="给项目加星">Star this project</span>
+              </a>
+            </div>
+            <div class="mini-points" aria-label="Highlights">
+              <span data-en="Visual node contract" data-zh="可视化节点接口">Visual node contract</span>
+              <span data-en="AI edits and tests" data-zh="AI 修改与测试">AI edits and tests</span>
+              <span data-en="Deploy to ComfyUI" data-zh="部署到 ComfyUI">Deploy to ComfyUI</span>
+            </div>
           </div>
-          <dl class="proof-points" aria-label="Project highlights">
-            <div>
-              <dt>Visual contracts</dt>
-              <dd>Inputs, outputs, widgets, and Return UI</dd>
-            </div>
-            <div>
-              <dt>Full source editing</dt>
-              <dd>Monaco-backed Python workspace</dd>
-            </div>
-            <div>
-              <dt>Managed deploy</dt>
-              <dd>Write, install, restart, and reload</dd>
-            </div>
-          </dl>
-        </div>
-      </section>
 
-      <section class="section intro-section" aria-labelledby="intro-title">
-        <div class="section-copy">
-          <p class="section-label">Local node-pack IDE</p>
-          <h2 id="intro-title">A focused authoring loop for ComfyUI developers.</h2>
-          <p>
-            Custom node work usually means hand-maintaining Python class metadata, generated mappings,
-            frontend display code, dependency files, and deployment steps. This builder puts those pieces
-            into one local workbench while keeping the generated files visible and editable.
-          </p>
-        </div>
-        <div class="intro-list" aria-label="Core capabilities">
-          <div>
-            <strong>Design the node</strong>
-            <span>Add typed inputs, outputs, widgets, categories, Return UI, and preview metadata.</span>
-          </div>
-          <div>
-            <strong>Edit the pack</strong>
-            <span>Work with Python, requirements, install scripts, custom renderers, and shared files.</span>
-          </div>
-          <div>
-            <strong>Ship locally</strong>
-            <span>Export ZIPs or deploy builder-managed packs directly into ComfyUI.</span>
+          <div class="hero-shot">
+            <img src="ai-builder.png" alt="ComfyUI Node Builder with the AI Builder panel open." />
           </div>
         </div>
       </section>
 
-      <section class="screenshot-band" aria-labelledby="screenshots-title">
-        <div class="section-heading">
-          <p class="section-label">Screenshots</p>
-          <h2 id="screenshots-title">The actual workbench, not a mock product shell.</h2>
+      <section class="wrap split-section">
+        <div class="section-head">
+          <div class="section-eyebrow" data-en="What it does" data-zh="它能做什么">What it does</div>
+          <h2 data-en="A real GUI for node packs, not just a prompt box." data-zh="真正的节点包 GUI，不只是一个提示词输入框。">
+            A real GUI for node packs, not just a prompt box.
+          </h2>
         </div>
-        <div class="screenshots">
-          <figure class="shot shot-large">
-            <img src="polished-populated.png" alt="ComfyUI Node Builder with a selected node, contract editor, and generated Python." />
-            <figcaption>Node contract, preview, generated files, and Python source in one workspace.</figcaption>
+        <div class="feature-list">
+          <article>
+            <h3 data-en="Design with ease" data-zh="轻松设计节点">Design with ease</h3>
+            <p data-en="Create inputs, outputs, widgets, Return UI, categories, and metadata without hand-writing every class field." data-zh="不用手写每个类字段，就能创建输入、输出、控件、Return UI、分类和元数据。">
+              Create inputs, outputs, widgets, Return UI, categories, and metadata without hand-writing every class field.
+            </p>
+          </article>
+          <article>
+            <h3 data-en="Build with AI power" data-zh="用 AI 构建复杂能力">Build with AI power</h3>
+            <p data-en="Ask AI to create nodes, edit files, explain errors, validate generated packs, run terminal checks, and request deployment when allowed." data-zh="让 AI 创建节点、编辑文件、解释错误、验证生成的节点包、运行终端检查，并在允许后请求部署。">
+              Ask AI to create nodes, edit files, explain errors, validate generated packs, run terminal checks, and request deployment when allowed.
+            </p>
+          </article>
+          <article>
+            <h3 data-en="Ship complicated packs" data-zh="交付复杂节点包">Ship complicated packs</h3>
+            <p data-en="Keep direct control of Python, requirements, install scripts, generated mappings, runtime UI, ZIP export, and managed ComfyUI deploy." data-zh="保留对 Python、requirements、安装脚本、映射文件、运行时 UI、ZIP 导出和 ComfyUI 托管部署的直接控制。">
+              Keep direct control of Python, requirements, install scripts, generated mappings, runtime UI, ZIP export, and managed ComfyUI deploy.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section id="screenshots" class="wrap screenshots-section">
+        <div class="section-head center">
+          <div class="section-eyebrow" data-en="AI workflow" data-zh="AI 工作流">AI workflow</div>
+          <h2 data-en="Screenshots from the actual app." data-zh="来自真实应用的截图。">Screenshots from the actual app.</h2>
+          <p data-en="The AI Builder sits inside the same workbench as your node preview, source files, and deploy controls." data-zh="AI Builder 位于同一个工作台中，和节点预览、源码文件、部署控制一起工作。">
+            The AI Builder sits inside the same workbench as your node preview, source files, and deploy controls.
+          </p>
+        </div>
+        <div class="shot-grid">
+          <figure class="shot-card shot-wide">
+            <img src="ai-builder.png" alt="AI Builder panel inside the ComfyUI Node Builder workbench." />
+            <figcaption data-en="Chat with AI while keeping the node contract and generated Python visible." data-zh="一边和 AI 对话，一边查看节点接口和生成的 Python。">
+              Chat with AI while keeping the node contract and generated Python visible.
+            </figcaption>
           </figure>
-          <figure class="shot">
-            <img src="polished-app.png" alt="ComfyUI Node Builder empty workspace with node library, palette, properties, and code areas." />
-            <figcaption>Start from a template, then shape the node interface visually.</figcaption>
+          <figure class="shot-card">
+            <img src="ai-settings.png" alt="AI settings with provider, model, skills, API key, and deploy gate." />
+            <figcaption data-en="Choose provider, model, skills, and gated deploy permissions." data-zh="选择提供商、模型、AI 技能，并控制部署权限。">
+              Choose provider, model, skills, and gated deploy permissions.
+            </figcaption>
           </figure>
-          <figure class="shot">
-            <img src="final-look.png" alt="ComfyUI Node Builder with execute code and generated Python visible." />
-            <figcaption>Review the generated ComfyUI Python before export or deploy.</figcaption>
+          <figure class="shot-card">
+            <img src="polished-populated.png" alt="ComfyUI Node Builder visual node contract and generated Python." />
+            <figcaption data-en="Visual contracts stay synced with editable generated pack files." data-zh="可视化节点接口会和可编辑的生成文件保持同步。">
+              Visual contracts stay synced with editable generated pack files.
+            </figcaption>
           </figure>
         </div>
       </section>
 
-      <section class="section audience-section" aria-labelledby="audience-title">
-        <div class="section-copy">
-          <p class="section-label">Who it is for</p>
-          <h2 id="audience-title">Use it when the node idea matters more than the packaging chores.</h2>
-          <p>
-            The builder is for ComfyUI users who know what behavior they want, but do not want each
-            experiment to start with the same custom-node scaffolding work.
-          </p>
-        </div>
-        <div class="audience-grid">
-          <div class="audience-item">
-            <h3>ComfyUI node authors</h3>
-            <p>Create and iterate on custom node packs with generated boilerplate and direct deployment.</p>
+      <section class="wrap quickstart-section">
+        <div class="quick-card">
+          <div>
+            <div class="section-eyebrow" data-en="Start here" data-zh="从这里开始">Start here</div>
+            <h2 data-en="Clone, run, build a node." data-zh="克隆、运行、开始构建节点。">Clone, run, build a node.</h2>
+            <p data-en="Run the local workbench, open the AI panel, and iterate until your custom node pack is ready for ComfyUI." data-zh="运行本地工作台，打开 AI 面板，不断迭代，直到自定义节点包可以部署到 ComfyUI。">
+              Run the local workbench, open the AI panel, and iterate until your custom node pack is ready for ComfyUI.
+            </p>
+            <div class="hero-cta tight">
+              <a class="btn btn-primary" href="https://github.com/caoool/comfyui-node-canvas#quick-start">
+                <span data-en="Read Quick Start" data-zh="阅读快速开始">Read Quick Start</span>
+              </a>
+              <a class="btn btn-ghost" href="https://github.com/caoool/comfyui-node-canvas/blob/main/docs/wiki/index.md">
+                <span data-en="Open Wiki" data-zh="打开 Wiki">Open Wiki</span>
+              </a>
+            </div>
           </div>
-          <div class="audience-item">
-            <h3>Workflow builders</h3>
-            <p>Prototype utility nodes for image, mask, latent, audio, text, and multi-output workflows.</p>
-          </div>
-          <div class="audience-item">
-            <h3>Python developers</h3>
-            <p>Keep direct control of Python source while the builder manages pack structure around it.</p>
-          </div>
-          <div class="audience-item">
-            <h3>AI-assisted prototypers</h3>
-            <p>Use the AI Builder to request node edits, validation, terminal checks, and gated deploys.</p>
+          <div class="terminal">
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+            </div>
+            <pre><code>git clone https://github.com/caoool/comfyui-node-canvas
+cd comfyui-node-canvas
+npm install
+npm run dev</code></pre>
           </div>
         </div>
       </section>
 
-      <section class="feature-section" aria-labelledby="features-title">
-        <div class="section-heading">
-          <p class="section-label">Highlights</p>
-          <h2 id="features-title">Everything needed for the local edit-test-deploy loop.</h2>
-        </div>
-        <div class="feature-grid">
-          <article>
-            <h3>Template-first authoring</h3>
-            <p>Start from blank, image, latent, mask, text, string preview, or multi-output nodes.</p>
-          </article>
-          <article>
-            <h3>Visual node contract</h3>
-            <p>Add ports, widgets, custom types, output expressions, and Return UI displays.</p>
-          </article>
-          <article>
-            <h3>Generated pack files</h3>
-            <p>Build node Python, mappings, runtime UI scripts, requirements, install scripts, and shared files.</p>
-          </article>
-          <article>
-            <h3>Managed metadata</h3>
-            <p>Deploy `builder.project.json` so builder-owned packs can be loaded back into the workbench.</p>
-          </article>
-          <article>
-            <h3>Local terminal checks</h3>
-            <p>Run lightweight commands in a generated pack workspace before testing inside ComfyUI.</p>
-          </article>
-          <article>
-            <h3>AI Builder panel</h3>
-            <p>Ask supported providers to create, revise, validate, test, or request deploy actions.</p>
-          </article>
-        </div>
-      </section>
-
-      <section class="workflow-section" aria-labelledby="workflow-title">
-        <div class="section-heading">
-          <p class="section-label">Workflow</p>
-          <h2 id="workflow-title">From template to ComfyUI in a short, inspectable path.</h2>
-        </div>
-        <ol class="workflow-list">
-          <li>
-            <span>01</span>
-            <div>
-              <h3>Create a node</h3>
-              <p>Choose a template and add the inputs, outputs, widgets, and Return UI the node needs.</p>
-            </div>
-          </li>
-          <li>
-            <span>02</span>
-            <div>
-              <h3>Edit Python</h3>
-              <p>Use the Monaco code workspace to write behavior and inspect generated pack files.</p>
-            </div>
-          </li>
-          <li>
-            <span>03</span>
-            <div>
-              <h3>Validate and test</h3>
-              <p>Fix validation issues, run terminal checks, and review notifications before shipping.</p>
-            </div>
-          </li>
-          <li>
-            <span>04</span>
-            <div>
-              <h3>Export or deploy</h3>
-              <p>Download a ZIP or write the managed pack into ComfyUI and request a restart.</p>
-            </div>
-          </li>
-        </ol>
-      </section>
-
-      <section class="deploy-section" aria-labelledby="deploy-title">
-        <div class="deploy-copy">
-          <p class="section-label">Managed deployment</p>
-          <h2 id="deploy-title">Built for local ComfyUI development.</h2>
-          <p>
-            Direct deploy writes the active pack to the configured ComfyUI install path, includes builder
-            metadata, installs dependencies when needed, and asks ComfyUI Extension Manager to restart.
-            The hosted landing page is static, but the workbench remains local because those actions need
-            loopback and file-system access.
-          </p>
-        </div>
-        <pre class="deploy-path"><code>&lt;ComfyUI&gt;/custom_nodes/&lt;pack-folder&gt;/
-  __init__.py
-  builder.project.json
-  NodeName.py
-  requirements.txt
-  web/runtimeUiDisplays.js</code></pre>
-      </section>
-
-      <section class="start-section" aria-labelledby="start-title">
-        <h2 id="start-title">Start with the wiki, then run the workbench locally.</h2>
-        <p>
-          The wiki explains setup, the workbench panels, node creation, deployment, generated files, and
-          troubleshooting. It is the fastest path from first clone to first deployed node.
+      <section class="wrap final-cta">
+        <h2 data-en="If this saves you ComfyUI boilerplate, give it a star." data-zh="如果它帮你省掉 ComfyUI 样板代码，欢迎给个 Star。">
+          If this saves you ComfyUI boilerplate, give it a star.
+        </h2>
+        <p data-en="Stars help more ComfyUI builders find the project and help guide what AI-assisted node authoring should support next." data-zh="Star 能让更多 ComfyUI 作者发现这个项目，也能帮助决定 AI 辅助节点开发下一步应该支持什么。">
+          Stars help more ComfyUI builders find the project and help guide what AI-assisted node authoring should support next.
         </p>
-        <div class="start-links">
-          <a class="button button-primary" href="https://github.com/caoool/comfyui-node-canvas/blob/main/docs/wiki/index.md">
-            Open the Wiki
+        <div class="hero-cta tight">
+          <a class="btn btn-primary" href="https://github.com/caoool/comfyui-node-canvas">
+            <span data-en="Star on GitHub" data-zh="去 GitHub 加星">Star on GitHub</span>
           </a>
-          <a class="button button-secondary" href="https://github.com/caoool/comfyui-node-canvas#quick-start">
-            Read Quick Start
+          <a class="btn btn-ghost" href="https://github.com/caoool/comfyui-node-canvas/issues">
+            <span data-en="Request a feature" data-zh="提出功能建议">Request a feature</span>
           </a>
         </div>
       </section>
     </main>
 
-    <footer class="site-footer">
-      <span>ComfyUI Node Builder</span>
-      <a href="https://github.com/caoool/comfyui-node-canvas">GitHub repository</a>
+    <footer>
+      <div class="wrap footer-inner">
+        <span data-en="Built for ComfyUI node authors." data-zh="为 ComfyUI 节点作者打造。">Built for ComfyUI node authors.</span>
+        <a href="https://github.com/caoool/comfyui-node-canvas">github.com/caoool/comfyui-node-canvas</a>
+      </div>
     </footer>
+
+    <script>
+      const html = document.documentElement;
+      const langButtons = document.querySelectorAll('[data-set-lang]');
+      const htmlLang = { en: 'en', zh: 'zh-CN' };
+
+      function applyLang(lang) {
+        html.setAttribute('lang', htmlLang[lang] || 'en');
+        document.body.setAttribute('data-lang', lang);
+        document.querySelectorAll('[data-en], [data-zh]').forEach((el) => {
+          const text = el.dataset[lang];
+          if (text != null && text !== '') el.textContent = text;
+        });
+        langButtons.forEach((button) => {
+          button.classList.toggle('active', button.dataset.setLang === lang);
+        });
+      }
+
+      function setLang(lang, persist = true) {
+        applyLang(lang);
+        if (!persist) return;
+        try {
+          localStorage.setItem('node-builder-lang', lang);
+          const url = new URL(location.href);
+          url.searchParams.set('lang', lang);
+          history.replaceState(null, '', url.toString());
+        } catch (error) {
+          /* localStorage or URL mutation may be unavailable in embedded previews. */
+        }
+      }
+
+      function detectLang() {
+        try {
+          const fromUrl = new URL(location.href).searchParams.get('lang');
+          if (fromUrl === 'en' || fromUrl === 'zh') return fromUrl;
+          const stored = localStorage.getItem('node-builder-lang');
+          if (stored === 'en' || stored === 'zh') return stored;
+        } catch (error) {
+          /* fall through to browser language */
+        }
+        return (navigator.language || '').toLowerCase().startsWith('zh') ? 'zh' : 'en';
+      }
+
+      langButtons.forEach((button) => {
+        button.addEventListener('click', () => setLang(button.dataset.setLang));
+      });
+      applyLang(detectLang());
+
+      const header = document.getElementById('hdr');
+      const onScroll = () => header.classList.toggle('scrolled', window.scrollY > 8);
+      window.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+
+      fetch('https://api.github.com/repos/caoool/comfyui-node-canvas')
+        .then((response) => (response.ok ? response.json() : null))
+        .then((data) => {
+          if (data && typeof data.stargazers_count === 'number') {
+            document.getElementById('starCount').textContent = data.stargazers_count.toLocaleString();
+          }
+        })
+        .catch(() => {});
+    </script>
   </body>
 </html>
