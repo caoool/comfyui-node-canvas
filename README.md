@@ -2,11 +2,24 @@
 
 Build powerful ComfyUI custom node packs with a visual GUI and AI.
 
+<p>
+  <a href="https://caoool.github.io/comfyui-node-canvas/"><img alt="GitHub Pages" src="https://img.shields.io/badge/demo-live-07c160?style=flat-square"></a>
+  <a href="https://github.com/caoool/comfyui-node-canvas/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/caoool/comfyui-node-canvas?style=flat-square&label=stars"></a>
+  <a href="https://github.com/caoool/comfyui-node-canvas/issues"><img alt="GitHub issues" src="https://img.shields.io/github/issues/caoool/comfyui-node-canvas?style=flat-square"></a>
+  <img alt="ComfyUI custom nodes" src="https://img.shields.io/badge/ComfyUI-custom%20nodes-5b6cff?style=flat-square">
+  <img alt="AI Builder" src="https://img.shields.io/badge/AI-node%20builder-28d4a0?style=flat-square">
+  <img alt="Built with Vue" src="https://img.shields.io/badge/Vue-TypeScript-42b883?style=flat-square">
+</p>
+
 🌐 **Landing page / 项目主页:** <https://caoool.github.io/comfyui-node-canvas/>
 
 📖 **Languages:** [English](#english) · [中文](#中文)
 
-⭐ If this project saves you ComfyUI boilerplate, please consider starring it: <https://github.com/caoool/comfyui-node-canvas>
+⭐ **Star this repo if it saves you ComfyUI boilerplate:** <https://github.com/caoool/comfyui-node-canvas>
+
+**At a glance:** local GUI app, visual node contract editor, editable generated Python, AI-assisted node creation, validation, ZIP export, and managed deploy into ComfyUI.
+
+**一句话：** 这是一个本地 GUI 应用，用 AI 帮你更快创建、修改、验证、部署和测试 ComfyUI 自定义节点包。
 
 ![Looping demo: user prompt to AI-created, deployed, and tested ComfyUI node](demo-ai-node-workflow.gif)
 
@@ -21,7 +34,23 @@ Build powerful ComfyUI custom node packs with a visual GUI and AI.
 - [Quick Start](#quick-start): clone, install, run, and create your first node.
 - [Wiki / detailed guide](docs/wiki/index.md): setup, workbench, node creation, deployment, project structure, and troubleshooting.
 - [GitHub Pages landing page](https://caoool.github.io/comfyui-node-canvas/): short bilingual product page with screenshots.
-- [Issues](https://github.com/caoool/comfyui-node-canvas/issues): request features, report bugs, or suggest AI-assisted workflows.
+- [Node ideas](https://github.com/caoool/comfyui-node-canvas/issues/new?template=node_idea.yml): suggest a ComfyUI node or pack for the AI Builder.
+- [Feature requests](https://github.com/caoool/comfyui-node-canvas/issues/new?template=feature_request.yml): request GUI, AI, deploy, or validation improvements.
+- [Bug reports](https://github.com/caoool/comfyui-node-canvas/issues/new?template=bug_report.yml): report broken behavior with reproduction steps.
+
+## Try These AI Prompts
+
+Use these prompts in the AI Builder to see what the project is designed for:
+
+- "Build a node that takes a simple prompt string and turns it into a stronger image-generation prompt with a small LLM."
+- "Create a utility node that reads image metadata and returns seed, model name, and prompt text."
+- "Add a batch helper node that takes a folder path and outputs sorted image file paths."
+- "Explain why this generated ComfyUI node fails validation and patch the Python file."
+- "Add requirements and an install script for this node pack, then validate before deploy."
+
+## Why Star This Project
+
+Stars help ComfyUI node authors find the project, help prioritize AI-assisted node-building features, and make it easier to collect real node ideas from the community.
 
 ---
 
