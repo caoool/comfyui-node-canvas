@@ -8,7 +8,7 @@ Build powerful ComfyUI custom node packs with a visual GUI and AI.
 
 ⭐ If this project saves you ComfyUI boilerplate, please consider starring it: <https://github.com/caoool/comfyui-node-canvas>
 
-![Looping demo: user prompt to AI-created, deployed, and tested ComfyUI node](demo-ai-node-workflow.svg)
+![Looping demo: user prompt to AI-created, deployed, and tested ComfyUI node](demo-ai-node-workflow.gif)
 
 **Demo:** a user asks for a simple LLM prompt-enhancer node; AI creates the node contract and code, updates dependencies, deploys the pack, and the node is tested in ComfyUI.
 

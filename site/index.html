@@ -99,7 +99,39 @@
           </div>
 
           <figure class="hero-shot demo-shot">
-            <img src="demo-ai-node-workflow.svg" alt="Looping demo of AI creating, deploying, and testing a ComfyUI custom node from a user request." />
+            <div class="demo-frame">
+              <img src="demo-ai-node-workflow.gif" alt="Looping demo of AI creating, deploying, and testing a ComfyUI custom node from a user request." />
+              <div class="demo-overlay" aria-hidden="true">
+                <div class="demo-progress-track">
+                  <span class="demo-progress-fill"></span>
+                </div>
+                <div class="demo-overlay-title" data-en="Prompt to ComfyUI node, handled by AI" data-zh="从提示到 ComfyUI 节点，AI 完成重活">
+                  Prompt to ComfyUI node, handled by AI
+                </div>
+                <div class="demo-step-list">
+                  <div class="demo-step demo-step-one">
+                    <span></span>
+                    <strong data-en="1. User enters the node idea" data-zh="1. 用户输入节点需求">1. User enters the node idea</strong>
+                    <em data-en="Simple string prompt to image-generation prompt." data-zh="把简单字符串提示词增强成图像生成提示词。">Simple string prompt to image-generation prompt.</em>
+                  </div>
+                  <div class="demo-step demo-step-two">
+                    <span></span>
+                    <strong data-en="2. AI builds the node" data-zh="2. AI 构建节点">2. AI builds the node</strong>
+                    <em data-en="Contract, Python, requirements, and generated files." data-zh="节点接口、Python、依赖和生成文件。">Contract, Python, requirements, and generated files.</em>
+                  </div>
+                  <div class="demo-step demo-step-three">
+                    <span></span>
+                    <strong data-en="3. Deploys into ComfyUI" data-zh="3. 部署到 ComfyUI">3. Deploys into ComfyUI</strong>
+                    <em data-en="Writes the pack after deploy approval." data-zh="在允许部署后写入节点包。">Writes the pack after deploy approval.</em>
+                  </div>
+                  <div class="demo-step demo-step-four">
+                    <span></span>
+                    <strong data-en="4. Tested in ComfyUI" data-zh="4. 在 ComfyUI 中测试">4. Tested in ComfyUI</strong>
+                    <em data-en="The generated node is ready in a workflow." data-zh="生成的节点可直接放入工作流。">The generated node is ready in a workflow.</em>
+                  </div>
+                </div>
+              </div>
+            </div>
             <figcaption data-en="Short demo: user request in, AI-created node pack out, then deploy and test in ComfyUI." data-zh="简短演示：用户输入需求，AI 创建节点包，然后部署并在 ComfyUI 中测试。">
               Short demo: user request in, AI-created node pack out, then deploy and test in ComfyUI.
             </figcaption>
