@@ -1,12 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://caoool.github.io/comfyui-node-canvas/</loc>
     <lastmod>2026-05-12</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>1.0</priority>
-    <xhtml:link rel="alternate" hreflang="en" href="https://caoool.github.io/comfyui-node-canvas/?lang=en" />
-    <xhtml:link rel="alternate" hreflang="zh-CN" href="https://caoool.github.io/comfyui-node-canvas/?lang=zh" />
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://caoool.github.io/comfyui-node-canvas/" />
   </url>
 </urlset>
