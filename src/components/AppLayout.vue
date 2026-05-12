@@ -1,46 +1,222 @@
 <template>
   <div class="layout">
     <AppToolbar
-      @add-node="emit('add-node')"
+      :export-disabled="exportDisabled"
+      :export-disabled-reason="exportDisabledReason"
+      :deploy-in-progress="deployInProgress"
       @export-zip="emit('export-zip')"
-      @hot-reload="emit('hot-reload')"
-      @settings="emit('settings')"
+      @deploy="emit('deploy')"
     />
     <div class="panels">
-      <aside class="panel panel-library">
+      <aside class="panel panel-library" :style="{ width: `${leftWidth}px` }">
         <slot name="library" />
       </aside>
-      <main class="panel panel-canvas">
-        <slot name="canvas" />
+      <div class="resizer" title="Resize node manager" @mousedown="startResize('left', $event)"></div>
+      <main class="panel panel-definition">
+        <slot name="definition" />
       </main>
-      <aside class="panel panel-properties">
-        <slot name="properties" />
-      </aside>
-      <aside class="panel panel-code">
+      <div class="resizer" title="Resize code workspace" @mousedown="startResize('code', $event)"></div>
+      <aside class="panel panel-code" :style="{ width: `${codeWidth}px` }">
         <slot name="code" />
       </aside>
     </div>
-    <AppStatusBar :status-text="statusText" :connected="connected" />
+    <div
+      v-if="uiStore.terminalOpen"
+      class="terminal-resizer"
+      title="Resize terminal"
+      @mousedown="startTerminalResize"
+    ></div>
+    <section
+      v-if="uiStore.terminalOpen"
+      class="terminal-shell"
+      :style="{ height: `${terminalHeight}px` }"
+    >
+      <TerminalPanel />
+    </section>
+    <div
+      v-if="uiStore.aiPanelOpen"
+      class="ai-resizer"
+      title="Resize AI builder"
+      @mousedown="startAiResize"
+    ></div>
+    <section
+      v-if="uiStore.aiPanelOpen"
+      class="ai-shell"
+      :style="{ height: `${aiHeight}px` }"
+    >
+      <AiChatPanel @deploy="emit('deploy')" />
+    </section>
+    <AppStatusBar :status-text="statusText" @settings="emit('settings')" />
     <ToastNotification />
   </div>
 </template>
 
 <script setup lang="ts">
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import AppToolbar from './AppToolbar.vue'
 import AppStatusBar from './AppStatusBar.vue'
+import TerminalPanel from './TerminalPanel.vue'
+import AiChatPanel from './AiChatPanel.vue'
 import ToastNotification from './ToastNotification.vue'
+import { useUiStore } from '../stores/ui'
 
 defineProps<{
   statusText: string
-  connected: boolean
+  exportDisabled?: boolean
+  exportDisabledReason?: string
+  deployInProgress?: boolean
 }>()
 
 const emit = defineEmits<{
-  'add-node': []
   'export-zip': []
-  'hot-reload': []
+  'deploy': []
   'settings': []
 }>()
+
+const uiStore = useUiStore()
+const LAYOUT_VERSION = 'terminal-layout-v1'
+const RESIZER_WIDTH = 12
+const MIN_LEFT_WIDTH = 260
+const MAX_LEFT_WIDTH = 560
+const MIN_CODE_WIDTH = 460
+const MIN_DEFINITION_WIDTH = 380
+const MIN_TERMINAL_HEIGHT = 180
+const MAX_TERMINAL_HEIGHT = 520
+
+const leftWidth = ref(MIN_LEFT_WIDTH)
+const codeWidth = ref(MIN_CODE_WIDTH)
+const terminalHeight = ref(280)
+const aiHeight = ref(360)
+
+onMounted(() => {
+  const hasCurrentLayout = localStorage.getItem('layout.version') === LAYOUT_VERSION
+  leftWidth.value = hasCurrentLayout
+    ? Number(localStorage.getItem('layout.leftWidth')) || MIN_LEFT_WIDTH
+    : MIN_LEFT_WIDTH
+  codeWidth.value = hasCurrentLayout
+    ? Number(localStorage.getItem('layout.codeWidth')) || maxCodeWidth()
+    : maxCodeWidth()
+  terminalHeight.value = Number(localStorage.getItem('layout.terminalHeight')) || 280
+  aiHeight.value = Number(localStorage.getItem('layout.aiHeight')) || 360
+  normalizeLayout(true)
+  window.addEventListener('resize', handleWindowResize)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', handleWindowResize)
+})
+
+function clamp(value: number, min: number, max: number): number {
+  if (max < min) return min
+  return Math.min(Math.max(value, min), max)
+}
+
+function maxLeftWidth(): number {
+  return Math.min(
+    MAX_LEFT_WIDTH,
+    Math.max(MIN_LEFT_WIDTH, window.innerWidth - MIN_CODE_WIDTH - MIN_DEFINITION_WIDTH - RESIZER_WIDTH),
+  )
+}
+
+function maxCodeWidth(): number {
+  return Math.max(MIN_CODE_WIDTH, window.innerWidth - leftWidth.value - MIN_DEFINITION_WIDTH - RESIZER_WIDTH)
+}
+
+function maxTerminalHeight(): number {
+  return Math.min(MAX_TERMINAL_HEIGHT, Math.max(MIN_TERMINAL_HEIGHT, Math.floor(window.innerHeight * 0.46)))
+}
+
+function normalizeLayout(persist = false) {
+  leftWidth.value = clamp(leftWidth.value, MIN_LEFT_WIDTH, maxLeftWidth())
+  codeWidth.value = clamp(codeWidth.value, MIN_CODE_WIDTH, maxCodeWidth())
+  terminalHeight.value = clamp(terminalHeight.value, MIN_TERMINAL_HEIGHT, maxTerminalHeight())
+  aiHeight.value = clamp(aiHeight.value, MIN_TERMINAL_HEIGHT, maxTerminalHeight())
+  if (persist) {
+    localStorage.setItem('layout.version', LAYOUT_VERSION)
+    localStorage.setItem('layout.leftWidth', String(leftWidth.value))
+    localStorage.setItem('layout.codeWidth', String(codeWidth.value))
+    localStorage.setItem('layout.terminalHeight', String(terminalHeight.value))
+    localStorage.setItem('layout.aiHeight', String(aiHeight.value))
+  }
+}
+
+function handleWindowResize() {
+  normalizeLayout(true)
+}
+
+function startResize(kind: 'left' | 'code', event: MouseEvent) {
+  event.preventDefault()
+  const startX = event.clientX
+  const startLeft = leftWidth.value
+  const startCode = codeWidth.value
+
+  function onMove(moveEvent: MouseEvent) {
+    const dx = moveEvent.clientX - startX
+    if (kind === 'left') {
+      leftWidth.value = clamp(startLeft + dx, MIN_LEFT_WIDTH, maxLeftWidth())
+      codeWidth.value = clamp(codeWidth.value, MIN_CODE_WIDTH, maxCodeWidth())
+      localStorage.setItem('layout.leftWidth', String(leftWidth.value))
+      localStorage.setItem('layout.codeWidth', String(codeWidth.value))
+    } else {
+      codeWidth.value = clamp(startCode - dx, MIN_CODE_WIDTH, maxCodeWidth())
+      localStorage.setItem('layout.codeWidth', String(codeWidth.value))
+    }
+  }
+
+  function onUp() {
+    window.removeEventListener('mousemove', onMove)
+    window.removeEventListener('mouseup', onUp)
+    document.body.classList.remove('is-resizing')
+  }
+
+  document.body.classList.add('is-resizing')
+  window.addEventListener('mousemove', onMove)
+  window.addEventListener('mouseup', onUp)
+}
+
+function startTerminalResize(event: MouseEvent) {
+  event.preventDefault()
+  const startY = event.clientY
+  const startHeight = terminalHeight.value
+
+  function onMove(moveEvent: MouseEvent) {
+    const dy = startY - moveEvent.clientY
+    terminalHeight.value = clamp(startHeight + dy, MIN_TERMINAL_HEIGHT, maxTerminalHeight())
+    localStorage.setItem('layout.terminalHeight', String(terminalHeight.value))
+  }
+
+  function onUp() {
+    window.removeEventListener('mousemove', onMove)
+    window.removeEventListener('mouseup', onUp)
+    document.body.classList.remove('is-terminal-resizing')
+  }
+
+  document.body.classList.add('is-terminal-resizing')
+  window.addEventListener('mousemove', onMove)
+  window.addEventListener('mouseup', onUp)
+}
+
+function startAiResize(event: MouseEvent) {
+  event.preventDefault()
+  const startY = event.clientY
+  const startHeight = aiHeight.value
+
+  function onMove(moveEvent: MouseEvent) {
+    const dy = startY - moveEvent.clientY
+    aiHeight.value = clamp(startHeight + dy, MIN_TERMINAL_HEIGHT, maxTerminalHeight())
+    localStorage.setItem('layout.aiHeight', String(aiHeight.value))
+  }
+
+  function onUp() {
+    window.removeEventListener('mousemove', onMove)
+    window.removeEventListener('mouseup', onUp)
+    document.body.classList.remove('is-ai-resizing')
+  }
+
+  document.body.classList.add('is-ai-resizing')
+  window.addEventListener('mousemove', onMove)
+  window.addEventListener('mouseup', onUp)
+}
 </script>
 
 <style scoped>
@@ -48,23 +224,137 @@ const emit = defineEmits<{
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background: var(--bg);
+  background:
+    radial-gradient(circle at 36% 0, rgba(104, 167, 255, 0.065), transparent 30rem),
+    var(--bg);
   color: var(--text);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: var(--font-sans);
 }
 .panels {
   display: flex;
   flex: 1;
+  min-height: 0;
   overflow: hidden;
 }
 .panel {
   overflow: auto;
-  border-right: 1px solid var(--border);
   background: var(--panel);
+  min-width: 0;
+  min-height: 0;
 }
-.panel:last-child { border-right: none; }
-.panel-library { width: 220px; flex-shrink: 0; }
-.panel-canvas { flex: 1; min-width: 0; background: var(--bg); }
-.panel-properties { width: 280px; flex-shrink: 0; }
-.panel-code { width: 340px; flex-shrink: 0; }
+.panel-library {
+  flex-shrink: 0;
+  box-shadow: 1px 0 0 var(--border-subtle) inset;
+}
+.panel-definition {
+  flex: 1;
+  background: var(--bg-grid);
+}
+.panel-code {
+  flex-shrink: 0;
+  overflow: hidden;
+  box-shadow: -1px 0 0 var(--border-subtle) inset;
+}
+.resizer {
+  width: 6px;
+  flex-shrink: 0;
+  cursor: col-resize;
+  background:
+    linear-gradient(90deg, transparent, rgba(148,163,184,0.18), transparent),
+    var(--bg);
+  transition: background 120ms ease;
+}
+.resizer:hover {
+  background:
+    linear-gradient(90deg, transparent, rgba(104,167,255,0.7), transparent),
+    var(--bg);
+}
+.terminal-resizer {
+  height: 6px;
+  flex-shrink: 0;
+  cursor: row-resize;
+  background:
+    linear-gradient(180deg, transparent, rgba(148,163,184,0.2), transparent),
+    var(--bg);
+  transition: background 120ms ease;
+}
+.terminal-resizer:hover {
+  background:
+    linear-gradient(180deg, transparent, rgba(104,167,255,0.68), transparent),
+    var(--bg);
+}
+.ai-resizer {
+  height: 6px;
+  flex-shrink: 0;
+  cursor: row-resize;
+  background:
+    linear-gradient(180deg, transparent, rgba(148,163,184,0.2), transparent),
+    var(--bg);
+  transition: background 120ms ease;
+}
+.ai-resizer:hover {
+  background:
+    linear-gradient(180deg, transparent, rgba(104,167,255,0.68), transparent),
+    var(--bg);
+}
+.terminal-shell {
+  flex: 0 0 auto;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--bg);
+}
+.ai-shell {
+  flex: 0 0 auto;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--bg);
+}
+:global(body.is-resizing) {
+  cursor: col-resize;
+  user-select: none;
+}
+:global(body.is-terminal-resizing) {
+  cursor: row-resize;
+  user-select: none;
+}
+:global(body.is-ai-resizing) {
+  cursor: row-resize;
+  user-select: none;
+}
+@media (max-width: 760px) {
+  .panels {
+    flex-direction: column;
+    overflow: auto;
+  }
+  .panel-library,
+  .panel-code {
+    width: 100% !important;
+    flex: 0 0 auto;
+  }
+  .panel-library {
+    min-height: 720px;
+  }
+  .panel-definition {
+    flex: 0 0 auto;
+    min-height: 720px;
+  }
+  .panel-code {
+    min-height: 560px;
+  }
+  .resizer {
+    display: none;
+  }
+  .terminal-resizer {
+    display: none;
+  }
+  .ai-resizer {
+    display: none;
+  }
+  .terminal-shell {
+    height: 420px !important;
+  }
+  .ai-shell {
+    height: 520px !important;
+  }
+}
 </style>

@@ -1,7 +1,9 @@
-import type { NodeSpec, ValidationError } from '../types/index'
+import type { NodeSpec, Project, ValidationError } from '../types/index'
 
 const NAME_FORMAT = /^[A-Za-z][A-Za-z0-9_]*$/
 const PORT_NAME_FORMAT = /^[a-z_][a-z0-9_]*$/
+const UI_RETURN_PATTERN = /["']ui["']\s*:/
+const TUPLE_RETURN_PATTERN = /\breturn\s*\(/
 
 export function validateNode(node: NodeSpec): ValidationError[] {
   const errors: ValidationError[] = []
@@ -61,12 +63,56 @@ export function validateNode(node: NodeSpec): ValidationError[] {
     }
   }
 
-  // Rule 8: returnTypes/returnNames mismatch
-  if (node.returnNames.length > 0 && node.returnTypes.length !== node.returnNames.length) {
+  // Rule 8: returnTypes/returnNames mismatch in advanced override mode
+  if (node.useReturnOverrides && node.returnNames.length > 0 && node.returnTypes.length !== node.returnNames.length) {
     errors.push({
       field: 'returnNames',
       message: 'Return names count must match return types count',
     })
+  }
+
+  if (
+    node.isOutputNode &&
+    node.outputs.length === 0 &&
+    TUPLE_RETURN_PATTERN.test(node.code) &&
+    !UI_RETURN_PATTERN.test(node.code)
+  ) {
+    errors.push({
+      field: 'code',
+      message: 'Output nodes without output ports cannot use tuple-only returns; return a ComfyUI UI payload, e.g. return {"ui": {"text": (value,)}}',
+    })
+  }
+
+  return errors
+}
+
+export function validateProject(project: Project): ValidationError[] {
+  const errors: ValidationError[] = []
+  const nodeNames = new Map<string, string>()
+  const fileNames = new Map<string, string>()
+
+  for (const node of project.nodes) {
+    for (const error of validateNode(node)) {
+      errors.push({ field: `${node.name || node.id}.${error.field}`, message: error.message })
+    }
+
+    const nameKey = node.name.trim()
+    if (nameKey) {
+      const existing = nodeNames.get(nameKey)
+      if (existing) {
+        errors.push({ field: 'nodes', message: `Duplicate node class name: ${nameKey}` })
+      } else {
+        nodeNames.set(nameKey, node.id)
+      }
+    }
+
+    const filename = `${nameKey}.py`
+    const existingFile = fileNames.get(filename)
+    if (nameKey && existingFile) {
+      errors.push({ field: 'nodes', message: `Duplicate generated filename: ${filename}` })
+    } else if (nameKey) {
+      fileNames.set(filename, node.id)
+    }
   }
 
   return errors

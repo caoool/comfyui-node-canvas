@@ -4,8 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently \"vite\" \"tsx watch server/index.ts\"",
-    "server": "tsx watch server/index.ts",
+    "dev": "concurrently -k \"vite --host\" \"node --experimental-strip-types --watch server/index.ts\"",
+    "server": "node --experimental-strip-types --watch server/index.ts",
+    "mcp": "node --experimental-strip-types server/mcpServer.ts",
     "build": "vue-tsc -b && vite build",
     "preview": "vite preview",
     "test": "vitest run",

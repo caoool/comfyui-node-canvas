@@ -11,6 +11,12 @@ node_modules
 dist
 dist-ssr
 *.local
+.superpowers/
+.node-builder/
+.playwright-cli/
+.playwright-mcp/
+.npm-cache/
+output/playwright/
 
 # Editor directories and files
 .vscode/*
