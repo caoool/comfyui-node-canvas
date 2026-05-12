@@ -32,7 +32,7 @@ jobs:
         run: |
           mkdir -p _site
           cp -R site/. _site/
-          cp ai-builder.png ai-settings.png polished-populated.png polished-app.png final-look.png initial-load.png _site/
+          cp demo-ai-node-workflow.svg ai-builder.png ai-settings.png polished-populated.png polished-app.png final-look.png initial-load.png _site/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

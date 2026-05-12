@@ -395,6 +395,20 @@ p::selection {
   object-fit: cover;
 }
 
+.demo-shot img {
+  aspect-ratio: 16 / 10;
+  object-fit: contain;
+  background: #07090f;
+}
+
+.demo-shot figcaption {
+  padding: 14px 18px 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 13px;
+  font-weight: 560;
+}
+
 .split-section,
 .screenshots-section,
 .quickstart-section,
