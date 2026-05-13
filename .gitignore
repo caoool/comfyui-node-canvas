@@ -18,6 +18,27 @@ dist-ssr
 .npm-cache/
 output/playwright/
 
+# Generated promo/video artifacts
+docs/promo/generated-videos/
+
+# Large local media and packaged artifacts
+*.mp4
+*.mov
+*.m4v
+*.webm
+*.avi
+*.mkv
+*.mp3
+*.ogg
+*.wav
+*.flac
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+*.rar
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
