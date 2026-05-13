@@ -11,7 +11,7 @@ I built a local GUI + AI builder for creating ComfyUI custom node packs
 Body:
 
 ```text
-I’ve been working on ComfyUI Node Builder, a local app for building custom ComfyUI nodes without hand-writing all the boilerplate every time.
+I've been working on ComfyUI Node Builder, a local app for building custom ComfyUI nodes without hand-writing all the boilerplate every time.
 
 The demo shows:
 
@@ -31,7 +31,7 @@ https://caoool.github.io/comfyui-node-canvas/
 Node ideas and feedback:
 https://github.com/caoool/comfyui-node-canvas/issues/2
 
-I’d especially like feedback from people who build custom nodes: what node authoring workflow should this support next?
+I'd especially like feedback from people who build custom nodes: what node authoring workflow should this support next?
 ```
 
 Attach: `demo-ai-node-workflow.gif` or `docs/promo/demo-ai-node-workflow.mp4`.
@@ -72,7 +72,7 @@ https://caoool.github.io/comfyui-node-canvas/
 Node ideas and feedback:
 https://github.com/caoool/comfyui-node-canvas/issues/2
 
-I’d especially value feedback on:
+I'd especially value feedback on:
 - whether the generated pack structure matches how ComfyUI node authors work
 - what validation/testing should catch before deploy
 - what example nodes would make the project easier to evaluate
