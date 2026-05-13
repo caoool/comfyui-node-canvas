@@ -3,14 +3,12 @@
 ## Day 1 Main Post
 
 ```text
-I built ComfyUI Node Builder: a local GUI app that helps AI create, edit, validate, deploy, and test custom ComfyUI node packs.
+I built ComfyUI Node Builder: a local GUI app where AI helps create, edit, validate, deploy, and test custom ComfyUI node packs.
 
-Prompt in -> AI builds node -> deploy to ComfyUI -> test in workflow.
+Prompt -> AI node pack -> deploy -> test in ComfyUI.
 
-GitHub: https://github.com/caoool/comfyui-node-canvas
-Demo: https://caoool.github.io/comfyui-node-canvas/
-
-If this saves you ComfyUI boilerplate, a star helps.
+If useful, a GitHub star helps:
+https://github.com/caoool/comfyui-node-canvas
 ```
 
 Attach: `demo-ai-node-workflow.gif` or `docs/promo/demo-ai-node-workflow.mp4`.
