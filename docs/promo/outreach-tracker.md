@@ -7,7 +7,7 @@ Use this file to track launch posts and follow-up work.
 | 2026-05-12 | GitHub node ideas | https://github.com/caoool/comfyui-node-canvas/issues/2 |  |  | Seed ideas posted | Share in launch posts |
 | 2026-05-12 | X/Twitter launch thread | https://x.com/Lu28954052/status/2054358410284736644 |  |  | Main post plus 2 replies posted | Monitor replies for 2 hours |
 | 2026-05-12 | Hacker News Show HN | https://news.ycombinator.com/showlim |  |  | Submission blocked by current HN Show HN restriction | Revisit after account has more HN participation |
-| 2026-05-12 | Reddit r/StableDiffusion |  |  |  | Submission blocked by Reddit captcha; no post created | Complete captcha manually, then submit the prepared post |
+| 2026-05-13 | Reddit r/StableDiffusion | https://old.reddit.com/r/StableDiffusion/comments/1tbk8zv/i_built_a_local_gui_ai_builder_for_creating/ |  |  | Posted after manual captcha completion | Monitor comments and answer technical questions |
 
 ## Node Ideas To Seed
 
