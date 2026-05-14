@@ -40,12 +40,38 @@ function isAction(value: unknown): value is BuilderAction {
   return Boolean(value && typeof value === 'object' && typeof (value as { type?: unknown }).type === 'string')
 }
 
+function firstString(...values: unknown[]): string | undefined {
+  return values.find((value): value is string => typeof value === 'string')
+}
+
+function normalizeAction(value: unknown): BuilderAction | null {
+  if (!isAction(value)) return null
+  const action = { ...(value as Record<string, unknown>) }
+  if (action.type === 'set_install_script' && typeof action.code !== 'string') {
+    const code = firstString(action.script, action.content, action.source, action.installScript)
+    if (code !== undefined) action.code = code
+  }
+  if (action.type === 'upsert_file') {
+    if (typeof action.relativePath !== 'string') {
+      const relativePath = firstString(action.path, action.file, action.filename)
+      if (relativePath !== undefined) action.relativePath = relativePath
+    }
+    if (typeof action.content !== 'string') {
+      const content = firstString(action.code, action.source, action.text)
+      if (content !== undefined) action.content = content
+    }
+  }
+  return action as BuilderAction
+}
+
 export function parseAiActionPlan(text: string): AiActionPlan {
   const rawJson = extractJson(text)
   if (!rawJson) return { reply: text.trim(), actions: [] }
   try {
     const parsed = JSON.parse(rawJson) as Partial<AiActionPlan>
-    const actions = Array.isArray(parsed.actions) ? parsed.actions.filter(isAction) : []
+    const actions = Array.isArray(parsed.actions)
+      ? parsed.actions.map(normalizeAction).filter((action): action is BuilderAction => Boolean(action))
+      : []
     const reply = typeof parsed.reply === 'string' && parsed.reply.trim() ? parsed.reply.trim() : text.replace(rawJson, '').trim()
     return { reply, actions }
   } catch {

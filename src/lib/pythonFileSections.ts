@@ -1,5 +1,6 @@
 import { MANAGED_PACK_NAME } from './managedPack'
 import { generatePython } from './generatePython'
+import { packFolderRelativePath } from './packIdentity'
 import type { NodeSpec } from '../types/index'
 
 const MODULE_MARKER = '# __COMFYUI_BUILDER_EDITABLE_MODULE__'
@@ -82,8 +83,9 @@ function unindentExecuteBody(code: string): string {
 
 function pathForNode(node: NodeSpec, installPath: string): string {
   const filename = `${node.name}.py`
-  if (!installPath) return `custom_nodes/${MANAGED_PACK_NAME}/${filename}`
-  return `${installPath.replace(/\/+$/, '')}/custom_nodes/${MANAGED_PACK_NAME}/${filename}`
+  const packLeaf = packFolderRelativePath(undefined)
+  if (!installPath) return `custom_nodes/${MANAGED_PACK_NAME}/${packLeaf}/${filename}`
+  return `${installPath.replace(/\/+$/, '')}/custom_nodes/${MANAGED_PACK_NAME}/${packLeaf}/${filename}`
 }
 
 export function buildPythonFileView(node: NodeSpec, installPath: string): PythonFileView {

@@ -1,4 +1,4 @@
-import { buildPackFiles } from './buildPackFiles'
+import { buildManagedProjectSnapshot, buildPackFiles } from './buildPackFiles'
 import type { Project } from '../types/index'
 
 export const MANAGED_PACK_NAME = 'ComfyUINodeBuilder'
@@ -16,7 +16,7 @@ export function buildManagedProjectFile(project: Project): string {
   const metadata: ManagedProjectFile = {
     builder: BUILDER_METADATA_ID,
     schemaVersion: BUILDER_METADATA_VERSION,
-    project,
+    project: buildManagedProjectSnapshot(project),
   }
   return `${JSON.stringify(metadata, null, 2)}\n`
 }

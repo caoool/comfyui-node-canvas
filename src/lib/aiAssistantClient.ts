@@ -1,10 +1,11 @@
 import { helperServerUrl } from './helperServer'
 
 export interface AiChatProviderConfig {
-  provider: 'openai' | 'openai-compatible' | 'openrouter' | 'anthropic' | 'gemini' | 'ollama'
+  provider: 'codex' | 'openai' | 'openai-compatible' | 'openrouter' | 'anthropic' | 'gemini' | 'ollama'
   apiKey?: string
   baseUrl?: string
   model: string
+  reasoningEffort?: string
 }
 
 export interface AiChatMessage {
@@ -16,6 +17,26 @@ export interface AiModelOption {
   id: string
   label: string
   rank?: number
+}
+
+export interface CodexReasoningOption {
+  effort: string
+  description?: string
+}
+
+export interface CodexStatus {
+  available: boolean
+  detail: string
+  version?: string
+  configModel?: string
+  configReasoningEffort?: string
+  models: Array<{
+    id: string
+    label: string
+    defaultReasoningEffort?: string
+    supportedReasoningEfforts: CodexReasoningOption[]
+  }>
+  reasoningEfforts: CodexReasoningOption[]
 }
 
 export type AiChatStreamEvent =
@@ -110,4 +131,19 @@ export async function fetchAiModels(config: Pick<AiChatProviderConfig, 'provider
   const data = await response.json().catch(() => ({})) as { models?: AiModelOption[]; error?: string }
   if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`)
   return Array.isArray(data.models) ? data.models : []
+}
+
+export async function fetchCodexStatus(): Promise<CodexStatus> {
+  const response = await fetch(helperServerUrl('/ai-codex-status'))
+  const data = await response.json().catch(() => ({})) as Partial<CodexStatus> & { error?: string }
+  if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`)
+  return {
+    available: Boolean(data.available),
+    detail: typeof data.detail === 'string' ? data.detail : '',
+    version: typeof data.version === 'string' ? data.version : undefined,
+    configModel: typeof data.configModel === 'string' ? data.configModel : undefined,
+    configReasoningEffort: typeof data.configReasoningEffort === 'string' ? data.configReasoningEffort : undefined,
+    models: Array.isArray(data.models) ? data.models : [],
+    reasoningEfforts: Array.isArray(data.reasoningEfforts) ? data.reasoningEfforts : [],
+  }
 }

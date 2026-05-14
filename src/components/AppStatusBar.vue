@@ -24,12 +24,16 @@
     >
       <span>AI</span>
     </button>
-    <AppNotificationDock @settings="emit('settings')" />
+    <button class="status-action settings-toggle" aria-label="Settings" title="Settings" @click="emit('settings')">
+      <svg viewBox="0 0 16 16" aria-hidden="true">
+        <path d="M6.7 2.1h2.6l.35 1.55c.32.12.62.29.9.5l1.5-.48 1.3 2.25-1.15 1.07c.03.17.05.34.05.51s-.02.34-.05.51l1.15 1.07-1.3 2.25-1.5-.48c-.28.21-.58.38-.9.5L9.3 12.9H6.7l-.35-1.55a4.33 4.33 0 0 1-.9-.5l-1.5.48-1.3-2.25 1.15-1.07a3 3 0 0 1-.05-.51c0-.17.02-.34.05-.51L2.65 5.92l1.3-2.25 1.5.48c.28-.21.58-.38.9-.5L6.7 2.1Z" />
+        <circle cx="8" cy="7.5" r="1.65" />
+      </svg>
+    </button>
   </div>
 </template>
 
 <script setup lang="ts">
-import AppNotificationDock from './AppNotificationDock.vue'
 import { useUiStore } from '../stores/ui'
 
 const uiStore = useUiStore()
@@ -95,5 +99,9 @@ const emit = defineEmits<{
   fill: none;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+.settings-toggle {
+  width: 24px;
+  padding: 0;
 }
 </style>

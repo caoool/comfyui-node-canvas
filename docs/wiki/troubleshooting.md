@@ -187,6 +187,8 @@ Check:
 - provider availability
 - local Ollama server for Ollama models
 
+The Local Codex provider uses your installed `codex` CLI and does not require an API key. Use **Check Codex** in AI Settings to verify the target machine can run `codex exec --version` and load the local model/effort catalog. If Local Codex fails, run `codex login` or `codex exec --version` in the same shell that starts the helper server.
+
 Open the AI activity panel for provider responses and errors. For OpenAI-compatible providers, confirm the base URL points to the `/v1` API root expected by that server.
 
 ## AI Builder Requested Deploy But Nothing Happened

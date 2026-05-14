@@ -136,7 +136,7 @@ Open the Vite URL, then open **Settings** from the status bar and configure:
 
 - **ComfyUI URL:** usually `http://127.0.0.1:8188`
 - **ComfyUI Install Path:** the folder that contains ComfyUI's `custom_nodes` directory
-- **Pack Name / ComfyUI Folder:** the local project name and deployed folder name
+- **Pack Name / Pack Slug:** the local project name and category slug. The slug defaults to `ComfyUINodeBuilder/` so you can append your own category path. Deploy always mirrors the active pack into `custom_nodes/ComfyUINodeBuilder`.
 
 ### Basic Workflow
 
@@ -275,7 +275,7 @@ npm run dev
 
 - **ComfyUI URL：** 通常是 `http://127.0.0.1:8188`
 - **ComfyUI Install Path：** 包含 ComfyUI `custom_nodes` 目录的文件夹
-- **Pack Name / ComfyUI Folder：** 本地项目名和部署后的文件夹名
+- **Pack Name / Pack Slug：** 本地项目名和分类标识。Slug 默认是 `ComfyUINodeBuilder/`，可以在后面追加自己的分类路径。部署始终同步到 `custom_nodes/ComfyUINodeBuilder`。
 
 ### 基本流程
 

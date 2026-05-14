@@ -32,7 +32,7 @@ export const useUiStore = defineStore('ui', () => {
   const diagnostics = ref<Diagnostic[]>([])
   const builderLogs = ref<BuilderLog[]>([])
   const terminalOpen = ref(false)
-  const aiPanelOpen = ref(false)
+  const aiPanelOpen = ref(true)
 
   function selectNode(id: string | null) {
     selectedNodeId.value = id

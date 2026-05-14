@@ -23,18 +23,20 @@
       </div>
     </div>
 
-    <div class="status-actions">
+    <div class="notification-actions">
       <button
-        class="status-btn notification-btn"
+        class="notification-btn"
         :class="{ active: notificationsOpen }"
         aria-label="Notifications"
+        title="Notifications"
         @click="notificationsOpen = !notificationsOpen"
       >
-        <span>Notifications</span>
+        <svg viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M5 6.35a3 3 0 0 1 6 0v2.4l1.15 1.75h-8.3L5 8.75v-2.4Z" />
+          <path d="M6.75 12.15a1.45 1.45 0 0 0 2.5 0" />
+          <path d="M8 2.4v.9" />
+        </svg>
         <span v-if="uiStore.diagnostics.length" class="count-badge">{{ uiStore.diagnostics.length }}</span>
-      </button>
-      <button class="status-btn settings-btn" aria-label="Settings" title="Settings" @click="emit('settings')">
-        ⚙
       </button>
     </div>
   </div>
@@ -43,10 +45,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useUiStore } from '../stores/ui'
-
-const emit = defineEmits<{
-  settings: []
-}>()
 
 const uiStore = useUiStore()
 const notificationsOpen = ref(false)
@@ -64,50 +62,54 @@ function formatTime(timestamp: number): string {
   justify-content: flex-end;
   flex: 0 0 auto;
 }
-.status-actions {
+.notification-actions {
   display: flex;
   align-items: center;
   gap: 6px;
 }
-.status-btn {
+.notification-btn {
+  position: relative;
+  width: 30px;
+  height: 30px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 22px;
   border: 1px solid var(--border-subtle);
-  border-radius: var(--r-sm);
+  border-radius: var(--r-md);
   background:
     linear-gradient(180deg, rgba(255,255,255,0.04), transparent),
     var(--raised);
   color: var(--text);
   cursor: pointer;
-  font-size: 11.5px;
-  font-weight: 700;
+  line-height: 1;
   box-shadow: var(--inner-highlight);
   transition: background 120ms ease, border-color 120ms ease, color 120ms ease, transform 80ms ease;
 }
-.status-btn:hover {
+.notification-btn:hover {
   background: var(--hover);
   border-color: var(--border-strong);
 }
-.status-btn:active {
+.notification-btn:active {
   transform: translateY(1px);
-}
-.notification-btn {
-  gap: 6px;
-  padding: 0 9px;
 }
 .notification-btn.active {
   color: var(--accent);
   background: var(--accent-soft);
   border-color: rgba(106, 166, 255, 0.3);
 }
-.settings-btn {
-  width: 24px;
-  padding: 0;
-  font-size: 13px;
+.notification-btn svg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 .count-badge {
+  position: absolute;
+  right: -5px;
+  top: -5px;
   min-width: 15px;
   height: 15px;
   display: inline-flex;
@@ -123,7 +125,7 @@ function formatTime(timestamp: number): string {
 .notification-popover {
   position: absolute;
   right: 0;
-  bottom: calc(100% + 8px);
+  top: calc(100% + 8px);
   z-index: 4200;
   width: min(520px, calc(100vw - 24px));
   max-height: min(540px, calc(100vh - 72px));
@@ -216,11 +218,8 @@ function formatTime(timestamp: number): string {
     width: calc(100vw - 20px);
     max-height: min(520px, calc(100vh - 72px));
   }
-  .status-actions {
+  .notification-actions {
     max-width: calc(100vw - 20px);
-  }
-  .notification-btn {
-    padding: 0 8px;
   }
 }
 </style>

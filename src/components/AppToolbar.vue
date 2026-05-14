@@ -19,7 +19,7 @@
         <select
           data-testid="pack-switcher"
           class="pack-select"
-          :value="projectStore.project.id"
+          :value="projectStore.activeProjectId"
           aria-label="Active pack"
           @change="switchPack"
         >
@@ -36,6 +36,7 @@
           class="icon-btn"
           title="Rename active pack"
           aria-label="Rename active pack"
+          :disabled="!hasActivePack"
           @click="openRename"
         >
           <svg viewBox="0 0 16 16" aria-hidden="true">
@@ -48,6 +49,7 @@
           class="icon-btn"
           title="Duplicate active pack"
           aria-label="Duplicate active pack"
+          :disabled="!hasActivePack"
           @click="duplicatePack"
         >
           <svg viewBox="0 0 16 16" aria-hidden="true">
@@ -60,7 +62,7 @@
           class="icon-btn danger-icon"
           title="Delete active pack from the local builder workspace"
           aria-label="Delete active pack"
-          :disabled="projectStore.projectSummaries.length <= 1"
+          :disabled="!hasActivePack"
           @click="deletePack"
         >
           <svg viewBox="0 0 16 16" aria-hidden="true">
@@ -83,7 +85,7 @@
             />
           </label>
           <label class="rename-field">
-            <span>ComfyUI Folder</span>
+            <span>Pack Slug</span>
             <input
               data-testid="toolbar-pack-folder"
               v-model="draftFolder"
@@ -127,14 +129,16 @@
         </svg>
         <span>{{ deployInProgress ? 'Deploying...' : 'Deploy & Restart' }}</span>
       </button>
+      <AppNotificationDock />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
+import AppNotificationDock from './AppNotificationDock.vue'
 import { useProjectStore } from '../stores/project'
-import { MANAGED_PACK_NAME } from '../lib/managedPack'
+import { DEFAULT_PACK_FOLDER_NAME } from '../lib/packIdentity'
 
 defineProps<{
   exportDisabled?: boolean
@@ -150,6 +154,7 @@ const projectStore = useProjectStore()
 const renameOpen = ref(false)
 const draftName = ref('')
 const draftFolder = ref('')
+const hasActivePack = computed(() => Boolean(projectStore.activeProjectId))
 
 watch(() => projectStore.project.id, () => {
   if (renameOpen.value) openRename()
@@ -161,8 +166,9 @@ function switchPack(event: Event) {
 }
 
 function openRename() {
+  if (!hasActivePack.value) return
   draftName.value = projectStore.project.name
-  draftFolder.value = projectStore.project.packFolderName || MANAGED_PACK_NAME
+  draftFolder.value = projectStore.project.packFolderName || DEFAULT_PACK_FOLDER_NAME
   renameOpen.value = true
 }
 
@@ -171,10 +177,11 @@ function cancelRename() {
 }
 
 function saveRename() {
+  if (!hasActivePack.value) return
   projectStore.setProjectName(draftName.value.trim() || projectStore.project.name)
   projectStore.setPackFolderName(draftFolder.value.trim() || projectStore.project.packFolderName || projectStore.project.name)
   draftName.value = projectStore.project.name
-  draftFolder.value = projectStore.project.packFolderName || MANAGED_PACK_NAME
+  draftFolder.value = projectStore.project.packFolderName || DEFAULT_PACK_FOLDER_NAME
   renameOpen.value = false
 }
 
@@ -183,10 +190,12 @@ function createPack() {
 }
 
 function duplicatePack() {
+  if (!hasActivePack.value) return
   projectStore.duplicateProject(projectStore.project.id)
 }
 
 function deletePack() {
+  if (!hasActivePack.value) return
   projectStore.deleteProject(projectStore.project.id)
 }
 </script>

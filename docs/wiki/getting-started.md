@@ -56,7 +56,7 @@ Open Settings from the status bar.
 Set:
 
 - **Pack Name:** human-readable project name in the builder.
-- **ComfyUI Folder:** folder name used under `custom_nodes` when deploying the active pack.
+- **Pack Slug:** category and metadata slug for the active pack. It defaults to `ComfyUINodeBuilder/` so you can append a custom category path. Deploy mirrors each pack to `custom_nodes/ComfyUINodeBuilder/<pack slug>`.
 - **ComfyUI URL:** usually `http://127.0.0.1:8188`.
 - **ComfyUI Install Path:** local path to the ComfyUI repository or installation root, not the `custom_nodes` folder itself.
 

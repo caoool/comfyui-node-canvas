@@ -1,6 +1,9 @@
 import { generatePython } from './generatePython'
 import { nodeForPythonGeneration, pythonInstallScriptForNode, pythonRequirementsForNode } from './nodeTemplates'
 import { isReservedPackFilePath, isReservedProjectFilePath, normalizeCustomNodeFilePath } from './nodeFilePaths'
+import { PACK_SLUG_ROOT, normalizePackFolderName } from './packIdentity'
+import { patchPythonSourceFromNode } from './pythonSourceSync'
+import { sanitizeInstallScript } from './installScriptSanitizer'
 import type { CustomNodeFileSpec, NodeSpec, Project, UiOutputSpec } from '../types/index'
 
 const FRONTEND_EXTENSION_PATH = 'web/runtimeUiDisplays.js'
@@ -11,8 +14,8 @@ const CUSTOM_RENDERER_SUFFIX = '.customRenderer.js'
 export function buildPackFiles(project: Project): Record<string, string> {
   const files: Record<string, string> = {}
   for (const rawNode of project.nodes) {
-    const node = nodeForPythonGeneration(rawNode)
-    files[`${node.name}.py`] = rawNode.pythonSource ?? generatePython(node)
+    const node = normalizeNodeForManagedPack(project, rawNode)
+    files[`${node.name}.py`] = sourceForManagedNode(rawNode, node)
   }
   for (const customFile of safeCustomFilesForProject(project)) {
     files[customFile.relativePath] = customFile.content
@@ -34,6 +37,50 @@ export function buildPackFiles(project: Project): Record<string, string> {
   const installScript = buildInstallPy(project)
   if (installScript) files['install.py'] = installScript
   return files
+}
+
+export function buildManagedProjectSnapshot(project: Project): Project {
+  return {
+    ...project,
+    nodes: project.nodes.map(rawNode => {
+      const node = normalizeNodeForManagedPack(project, rawNode)
+      return {
+        ...node,
+        pythonSource: sourceForManagedNode(rawNode, node),
+      }
+    }),
+  }
+}
+
+function sourceForManagedNode(rawNode: NodeSpec, node: NodeSpec): string {
+  if (!rawNode.pythonSource) return generatePython(node)
+  const synced = patchPythonSourceFromNode(rawNode.pythonSource, rawNode, node)
+  return synced.issues.length === 0 ? synced.text : rawNode.pythonSource
+}
+
+function normalizeNodeForManagedPack(project: Project, rawNode: NodeSpec): NodeSpec {
+  const node = nodeForPythonGeneration(rawNode)
+  return {
+    ...node,
+    category: managedCategoryForNode(project, node.category),
+  }
+}
+
+function managedCategoryForNode(project: Project, category: string): string {
+  const root = normalizePackFolderName(project.packFolderName || project.name).replace(/\/+$/g, '') || PACK_SLUG_ROOT
+  const trimmed = category.trim()
+  if (!trimmed || trimmed === PACK_SLUG_ROOT || trimmed === root) return root
+  if (trimmed === root || trimmed.startsWith(`${root}/`)) return trimmed
+  if (trimmed.startsWith(`${PACK_SLUG_ROOT}/`)) {
+    const suffix = trimmed.slice(PACK_SLUG_ROOT.length + 1)
+    if (!suffix) return root
+    if (root === PACK_SLUG_ROOT) return `${PACK_SLUG_ROOT}/${suffix}`
+    if (suffix === root.slice(PACK_SLUG_ROOT.length + 1) || suffix.startsWith(`${root.slice(PACK_SLUG_ROOT.length + 1)}/`)) {
+      return `${PACK_SLUG_ROOT}/${suffix}`
+    }
+    return `${root}/${suffix}`
+  }
+  return root
 }
 
 function safeCustomFilesForProject(project: Project): CustomNodeFileSpec[] {
@@ -90,11 +137,11 @@ export function projectRequirements(project: Project): string[] {
 
 export function projectInstallScript(project: Project): string {
   const explicit = project.pythonInstallScript?.trim()
-  if (explicit) return explicit
-  return project.nodes
+  if (explicit) return sanitizeInstallScript(explicit)
+  return sanitizeInstallScript(project.nodes
     .map(node => pythonInstallScriptForNode(node).trim())
     .filter(Boolean)
-    .join('\n\n')
+    .join('\n\n'))
 }
 
 function buildRequirementsTxt(project: Project): string {
@@ -115,17 +162,23 @@ function buildInstallPy(project: Project): string {
 }
 
 function buildInitPy(nodeNames: string[]): string {
-  // We only need the mapping dicts at the package level; ComfyUI doesn't import
-  // the class names from __init__.py.
   const lines = [
-    ...nodeNames.map(n =>
-      `from .${n} import NODE_CLASS_MAPPINGS as ${n}_MAPPINGS, NODE_DISPLAY_NAME_MAPPINGS as ${n}_DISPLAY_MAPPINGS`,
-    ),
+    'import importlib',
+    'import traceback',
     '',
     'NODE_CLASS_MAPPINGS = {}',
     'NODE_DISPLAY_NAME_MAPPINGS = {}',
-    ...nodeNames.map(n => `NODE_CLASS_MAPPINGS.update(${n}_MAPPINGS)`),
-    ...nodeNames.map(n => `NODE_DISPLAY_NAME_MAPPINGS.update(${n}_DISPLAY_MAPPINGS)`),
+    `_NODE_MODULES = ${JSON.stringify(nodeNames)}`,
+    '',
+    'for _node_module in _NODE_MODULES:',
+    '    try:',
+    '        _module = importlib.import_module(f".{_node_module}", __name__)',
+    '    except Exception:',
+    '        print(f"[ComfyUINodeBuilder] Failed to import node module {_node_module}:")',
+    '        traceback.print_exc()',
+    '        continue',
+    '    NODE_CLASS_MAPPINGS.update(getattr(_module, "NODE_CLASS_MAPPINGS", {}))',
+    '    NODE_DISPLAY_NAME_MAPPINGS.update(getattr(_module, "NODE_DISPLAY_NAME_MAPPINGS", {}))',
     '',
     'WEB_DIRECTORY = "./web"',
     '',

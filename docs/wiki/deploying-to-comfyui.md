@@ -41,7 +41,7 @@ Direct deploy requires:
 
 - **ComfyUI Install Path:** must contain a `custom_nodes` directory.
 - **ComfyUI URL:** must be a loopback HTTP or HTTPS URL such as `http://127.0.0.1:8188`.
-- **ComfyUI Folder:** the active pack folder name.
+- **Pack Slug:** the active pack slug used in builder metadata and ComfyUI categories. It defaults to `ComfyUINodeBuilder/` so you can append a custom category path. Deploy mirrors each pack to its own folder under `custom_nodes/ComfyUINodeBuilder/<pack slug>`.
 
 The helper server checks install paths before writing. ComfyUI proxy endpoints are limited to loopback URLs.
 
@@ -50,17 +50,18 @@ The helper server checks install paths before writing. ComfyUI proxy endpoints a
 A deployed builder pack can include:
 
 ```text
-<pack-folder>/
-  __init__.py
-  builder.project.json
-  NodeA.py
-  NodeB.py
-  requirements.txt
-  install.py
-  helpers.py
-  web/
-    runtimeUiDisplays.js
-    NodeA.customRenderer.js
+ComfyUINodeBuilder/
+  <pack-slug>/
+    __init__.py
+    builder.project.json
+    NodeA.py
+    NodeB.py
+    requirements.txt
+    install.py
+    helpers.py
+    web/
+      runtimeUiDisplays.js
+      NodeA.customRenderer.js
 ```
 
 Not every pack has every file. Requirements, install scripts, custom files, and custom renderers are included only when the project uses them.

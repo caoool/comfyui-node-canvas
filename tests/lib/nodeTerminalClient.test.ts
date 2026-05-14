@@ -57,7 +57,7 @@ describe('nodeTerminalClient', () => {
     const payload = buildNodeTerminalPayload(projectFixture(), 'node-1', 'python CustomNode.py')
 
     expect(payload).toMatchObject({
-      projectName: 'TerminalPack',
+      projectName: 'ComfyUINodeBuilder/TerminalPack',
       selectedNodeId: 'node-1',
       command: 'python CustomNode.py',
       requirements: ['requests'],
@@ -93,10 +93,28 @@ describe('nodeTerminalClient', () => {
     }))
     expect(body).toMatchObject({
       selectedNodeId: 'node-1',
-      projectName: 'TerminalPack',
+      projectName: 'ComfyUINodeBuilder/TerminalPack',
       command: 'python -V',
       requirements: ['requests'],
     })
     expect(result.stdout).toBe('Python 3.13.0\n')
+  })
+
+  it('normalizes missing terminal output fields from helper responses', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        success: true,
+        command: 'python -V',
+        exitCode: 0,
+        cwd: '/repo/.node-builder/terminal/comfyuinodebuilder',
+        envPath: '/repo/.node-builder/terminal/comfyuinodebuilder/.venv',
+      }),
+    } as Response)
+
+    const result = await runNodeTerminalCommand(projectFixture(), 'node-1', 'python -V')
+
+    expect(result.stdout).toBe('')
+    expect(result.stderr).toBe('')
   })
 })

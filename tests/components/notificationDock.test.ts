@@ -11,7 +11,9 @@ describe('notification dock', () => {
     setActivePinia(createPinia())
   })
 
-  it('moves diagnostics and settings out of the top toolbar', () => {
+  it('shows notifications as an icon button in the top toolbar', async () => {
+    const uiStore = useUiStore()
+    uiStore.addDiagnostic('warning', 'Managed pack not found', 'No builder.project.json found', false)
     const wrapper = mount(AppToolbar, {
       props: {
         exportDisabled: false,
@@ -20,10 +22,19 @@ describe('notification dock', () => {
     })
 
     expect(wrapper.text()).not.toContain('Diagnostics')
+    expect(wrapper.find('[aria-label="Notifications"]').exists()).toBe(true)
+    expect(wrapper.find('[aria-label="Notifications"] svg').exists()).toBe(true)
+    expect(wrapper.find('[aria-label="Notifications"]').text()).not.toContain('Notifications')
     expect(wrapper.find('[aria-label="Settings"]').exists()).toBe(false)
+    expect(wrapper.text()).toContain('1')
+
+    await wrapper.find('[aria-label="Notifications"]').trigger('click')
+
+    expect(wrapper.text()).toContain('Managed pack not found')
+    expect(wrapper.text()).toContain('No builder.project.json found')
   })
 
-  it('shows notifications and settings inside the bottom status bar', async () => {
+  it('keeps settings in the bottom status bar without notifications', async () => {
     const uiStore = useUiStore()
     uiStore.addDiagnostic('warning', 'Managed pack not found', 'No builder.project.json found', false)
 
@@ -34,15 +45,8 @@ describe('notification dock', () => {
     })
 
     expect(wrapper.find('.status-bar').exists()).toBe(true)
-    expect(wrapper.find('[aria-label="Notifications"]').exists()).toBe(true)
     expect(wrapper.find('[aria-label="Settings"]').exists()).toBe(true)
-    expect(wrapper.text()).toContain('1')
-
-    await wrapper.find('[aria-label="Notifications"]').trigger('click')
-
-    expect(wrapper.text()).toContain('Notifications')
-    expect(wrapper.text()).toContain('Managed pack not found')
-    expect(wrapper.text()).toContain('No builder.project.json found')
+    expect(wrapper.find('[aria-label="Notifications"]').exists()).toBe(false)
   })
 
   it('keeps the notification controls embedded instead of fixed as a floating dock', () => {
@@ -50,5 +54,6 @@ describe('notification dock', () => {
 
     expect(wrapper.find('.notification-status-actions').exists()).toBe(true)
     expect(wrapper.find('.notification-dock').exists()).toBe(false)
+    expect(wrapper.find('[aria-label="Notifications"] svg').exists()).toBe(true)
   })
 })

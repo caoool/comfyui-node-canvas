@@ -1,20 +1,26 @@
 import express from 'express'
-import { writeFile, mkdir, readFile, readdir, unlink } from 'fs/promises'
+import { writeFile, mkdir, readFile } from 'fs/promises'
 import path from 'path'
 import { existsSync } from 'fs'
 import { requestComfyUIRestart } from './comfyuiRestart.ts'
 import { installManagedPackDependencies } from './dependencyInstaller.ts'
 import { runNodeTerminalCommand } from './nodeTerminal.ts'
 import { callAiProvider, listAiModels, streamAiProvider, type AiModelListRequest, type AiProviderRequest, type AiStreamEvent } from './aiProviders.ts'
+import { checkCodexStatus } from './codexProvider.ts'
 import {
   builderMetadataPathFor,
   customNodesDirFor,
   isSafePackName,
   isSafePackFilePath,
+  isSafePackSlug,
   listBuilderOwnedProjects,
+  listManagedPackFilesystem,
   managedPackDirFor,
   packFilePathFor,
   parseBuilderOwnedProject,
+  removeLegacyBuilderPackDirs,
+  syncBuilderRootPackage,
+  syncManagedPackDir,
 } from './managedProject.ts'
 
 const app = express()
@@ -86,6 +92,7 @@ app.post('/write-pack', async (req, res) => {
       await mkdir(path.dirname(filePath), { recursive: true })
       await writeFile(filePath, code, 'utf8')
     }
+    await syncBuilderRootPackage(installPath)
     res.json({ success: true, path: packDir })
   } catch (err) {
     res.status(500).json({ error: String(err) })
@@ -99,33 +106,6 @@ function validateFileMap(files: unknown): files is Record<string, string> {
     if (!isSafePackFilePath(filename)) return false
   }
   return true
-}
-
-async function removeStaleGeneratedFiles(packDir: string, nextFilenames: Set<string>) {
-  if (!existsSync(packDir)) return
-  const staleFiles: string[] = []
-
-  async function walk(dir: string, prefix = '') {
-    const entries = await readdir(dir, { withFileTypes: true })
-    await Promise.all(entries.map(async (entry) => {
-      const relativePath = prefix ? `${prefix}/${entry.name}` : entry.name
-      const fullPath = path.join(dir, entry.name)
-      if (entry.isDirectory()) {
-        if (relativePath === 'web' || prefix.startsWith('web/')) await walk(fullPath, relativePath)
-        return
-      }
-      if (!entry.isFile()) return
-      const isGeneratedPython = !prefix && entry.name.endsWith('.py')
-      const isGeneratedRequirements = !prefix && entry.name === 'requirements.txt'
-      const isGeneratedFrontend = relativePath.startsWith('web/') && relativePath.endsWith('.js')
-      if ((isGeneratedPython || isGeneratedRequirements || isGeneratedFrontend) && !nextFilenames.has(relativePath)) {
-        staleFiles.push(fullPath)
-      }
-    }))
-  }
-
-  await walk(packDir)
-  await Promise.all(staleFiles.map(filename => unlink(filename)))
 }
 
 // POST /validate-install-path
@@ -145,7 +125,7 @@ app.post('/validate-install-path', (req, res) => {
 app.post('/read-managed-project', async (req, res) => {
   const { installPath, packName } = req.body as { installPath?: string; packName?: string }
   if (!installPath) return res.status(400).json({ error: 'installPath is required' })
-  if (packName !== undefined && !isSafePackName(packName)) return res.status(400).json({ error: 'packName is unsafe' })
+  if (packName !== undefined && !isSafePackSlug(packName)) return res.status(400).json({ error: 'packName is unsafe' })
   const customNodesDir = customNodesDirFor(installPath)
   if (!existsSync(customNodesDir)) {
     return res.status(400).json({ error: `custom_nodes directory not found at: ${customNodesDir}` })
@@ -177,6 +157,28 @@ app.post('/list-managed-projects', async (req, res) => {
   }
 })
 
+// POST /list-managed-pack-files
+// Body: { installPath: string, packName?: string } -> { path, entries }
+app.post('/list-managed-pack-files', async (req, res) => {
+  const { installPath, packName } = req.body as { installPath?: string; packName?: string }
+  if (!installPath) return res.status(400).json({ error: 'installPath is required' })
+  if (packName !== undefined && !isSafePackSlug(packName)) return res.status(400).json({ error: 'packName is unsafe' })
+  const customNodesDir = customNodesDirFor(installPath)
+  if (!existsSync(customNodesDir)) {
+    return res.status(400).json({ error: `custom_nodes directory not found at: ${customNodesDir}` })
+  }
+
+  try {
+    const safePackName = packName ?? undefined
+    res.json({
+      path: managedPackDirFor(installPath, safePackName),
+      entries: await listManagedPackFilesystem(installPath, safePackName),
+    })
+  } catch (err) {
+    res.status(400).json({ error: String(err) })
+  }
+})
+
 // POST /deploy-managed-pack
 // Body: { installPath: string, packName?: string, files: Record<string, string> }
 // Writes to the active builder-owned pack folder and removes stale generated files.
@@ -187,7 +189,7 @@ app.post('/deploy-managed-pack', async (req, res) => {
     files?: Record<string, string>
   }
 
-  if (!installPath || !validateFileMap(files) || !isSafePackName(packName)) {
+  if (!installPath || !validateFileMap(files) || !isSafePackSlug(packName)) {
     return res.status(400).json({ error: 'installPath, safe packName, and safe files map are required' })
   }
 
@@ -197,19 +199,15 @@ app.post('/deploy-managed-pack', async (req, res) => {
   }
 
   const packDir = managedPackDirFor(installPath, packName)
-  const nextFilenames = new Set(Object.keys(files))
   try {
-    await mkdir(packDir, { recursive: true })
-    await removeStaleGeneratedFiles(packDir, nextFilenames)
-    for (const [filename, code] of Object.entries(files)) {
-      const filePath = packFilePathFor(packDir, filename)
-      await mkdir(path.dirname(filePath), { recursive: true })
-      await writeFile(filePath, code, 'utf8')
-    }
+    await removeLegacyBuilderPackDirs(installPath)
+    const filesWritten = await syncManagedPackDir(packDir, files)
+    const builderRootFilesWritten = await syncBuilderRootPackage(installPath)
     res.json({
       success: true,
       path: packDir,
-      filesWritten: Object.keys(files).sort(),
+      filesWritten,
+      builderRootFilesWritten,
       restartRequired: true,
     })
   } catch (err) {
@@ -223,7 +221,7 @@ app.post('/deploy-managed-pack', async (req, res) => {
 app.post('/install-managed-dependencies', async (req, res) => {
   const { installPath, packName } = req.body as { installPath?: string; packName?: string }
   if (!installPath) return res.status(400).json({ error: 'installPath is required' })
-  if (packName !== undefined && !isSafePackName(packName)) return res.status(400).json({ error: 'packName is unsafe' })
+  if (packName !== undefined && !isSafePackSlug(packName)) return res.status(400).json({ error: 'packName is unsafe' })
   const customNodesDir = customNodesDirFor(installPath)
   if (!existsSync(customNodesDir)) {
     return res.status(400).json({ error: `custom_nodes directory not found at: ${customNodesDir}` })
@@ -293,6 +291,8 @@ app.post('/ai-chat', async (req, res) => {
 function writeAiStreamEvent(res: express.Response, event: AiStreamEvent) {
   res.write(`event: ${event.type}\n`)
   res.write(`data: ${JSON.stringify(event)}\n\n`)
+  const streamResponse = res as express.Response & { flush?: () => void }
+  streamResponse.flush?.()
 }
 
 // POST /ai-chat-stream
@@ -304,6 +304,7 @@ app.post('/ai-chat-stream', async (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream')
   res.setHeader('Cache-Control', 'no-cache')
   res.setHeader('Connection', 'keep-alive')
+  res.setHeader('X-Accel-Buffering', 'no')
   res.flushHeaders()
   try {
     const body = req.body as AiProviderRequest
@@ -326,6 +327,19 @@ app.post('/ai-models', async (req, res) => {
   try {
     const body = req.body as AiModelListRequest
     res.json(await listAiModels(body))
+  } catch (err) {
+    res.status(500).json({ error: String(err) })
+  }
+})
+
+// GET /ai-codex-status
+// Checks the local Codex CLI and returns locally configured models/reasoning effort.
+app.get('/ai-codex-status', async (req, res) => {
+  if (!requestOriginIsLoopback(req)) {
+    return res.status(403).json({ error: 'AI Codex status requests are only accepted from loopback origins' })
+  }
+  try {
+    res.json(await checkCodexStatus())
   } catch (err) {
     res.status(500).json({ error: String(err) })
   }

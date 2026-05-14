@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   deployManagedPack: vi.fn(),
   installManagedDependencies: vi.fn(),
   readManagedProject: vi.fn(),
+  validateInstallPath: vi.fn(),
   restartComfyUI: vi.fn(),
   checkConnection: vi.fn(),
   runDeployPipeline: vi.fn(),
@@ -29,6 +30,7 @@ vi.mock('../../src/lib/writeToFilesystem', () => ({
   deployManagedPack: mocks.deployManagedPack,
   installManagedDependencies: mocks.installManagedDependencies,
   readManagedProject: mocks.readManagedProject,
+  validateInstallPath: mocks.validateInstallPath,
 }))
 vi.mock('../../src/lib/comfyuiApi', () => ({
   restartComfyUI: mocks.restartComfyUI,
@@ -64,6 +66,7 @@ describe('App deploy scope', () => {
       stderr: '',
     })
     mocks.restartComfyUI.mockResolvedValue(undefined)
+    mocks.validateInstallPath.mockResolvedValue({ ok: true, customNodesPath: '/ComfyUI/custom_nodes' })
   })
 
   it('deploys and installs dependencies for the pack that was active when Deploy was clicked', async () => {
@@ -81,11 +84,11 @@ describe('App deploy scope', () => {
     projectStore.switchProject(firstPackId)
 
     mocks.deployManagedPack.mockImplementation(async (_installPath: string, project: Project) => {
-      expect(project.packFolderName).toBe('FirstPack')
+      expect(project.packFolderName).toBe('ComfyUINodeBuilder/FirstPack')
       projectStore.switchProject(secondPack.id!)
       return {
         success: true,
-        path: '/ComfyUI/custom_nodes/FirstPack',
+        path: '/ComfyUI/custom_nodes/ComfyUINodeBuilder',
         filesWritten: ['requirements.txt'],
         restartRequired: true,
       }
@@ -97,9 +100,40 @@ describe('App deploy scope', () => {
 
     expect(mocks.deployManagedPack).toHaveBeenCalledWith('/ComfyUI', expect.objectContaining({
       name: 'First Pack',
-      packFolderName: 'FirstPack',
+      packFolderName: 'ComfyUINodeBuilder/FirstPack',
     }))
-    expect(mocks.installManagedDependencies).toHaveBeenCalledWith('/ComfyUI', 'FirstPack')
+    expect(mocks.installManagedDependencies).toHaveBeenCalledWith('/ComfyUI', 'ComfyUINodeBuilder/FirstPack')
     expect(mocks.restartComfyUI).toHaveBeenCalledWith('http://127.0.0.1:8188')
+  })
+
+  it('warns on startup when ComfyUI install path is not set', async () => {
+    const { default: App } = await import('../../src/App.vue')
+    const { useUiStore } = await import('../../src/stores/ui')
+    const uiStore = useUiStore()
+
+    mount(App)
+    await flushPromises()
+
+    expect(mocks.validateInstallPath).not.toHaveBeenCalled()
+    expect(uiStore.diagnostics[0]).toMatchObject({
+      level: 'warning',
+      title: 'Set ComfyUI install path',
+    })
+  })
+
+  it('checks remembered ComfyUI install path on startup without notifying on success', async () => {
+    const { default: App } = await import('../../src/App.vue')
+    const { useProjectStore } = await import('../../src/stores/project')
+    const { useUiStore } = await import('../../src/stores/ui')
+    const projectStore = useProjectStore()
+    const uiStore = useUiStore()
+    projectStore.setComfyuiInstallPath('/ComfyUI')
+
+    mount(App)
+    await flushPromises()
+
+    expect(mocks.validateInstallPath).toHaveBeenCalledWith('/ComfyUI')
+    expect(uiStore.diagnostics).toEqual([])
+    expect(uiStore.toasts).toEqual([])
   })
 })

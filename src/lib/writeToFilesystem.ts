@@ -69,6 +69,23 @@ export async function listManagedProjects(installPath: string): Promise<ListMana
   return postJson('/list-managed-projects', { installPath })
 }
 
+export interface ManagedPackFilesystemEntry {
+  kind: 'directory' | 'file'
+  relativePath: string
+}
+
+export interface ListManagedPackFilesResult {
+  path: string
+  entries: ManagedPackFilesystemEntry[]
+}
+
+export async function listManagedPackFiles(
+  installPath: string,
+  packName?: string,
+): Promise<ListManagedPackFilesResult> {
+  return postJson('/list-managed-pack-files', { installPath, packName })
+}
+
 export interface InstallManagedDependenciesResult {
   success: true
   python: string

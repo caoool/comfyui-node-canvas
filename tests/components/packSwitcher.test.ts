@@ -49,8 +49,8 @@ describe('pack switcher', () => {
     await wrapper.get('[data-testid="save-pack-rename"]').trigger('click')
 
     expect(projectStore.project.name).toBe('Vision Tools')
-    expect(projectStore.project.packFolderName).toBe('Vision_Tools')
-    expect(wrapper.get('[data-testid="pack-switcher"]').text()).toContain('Vision Tools · Vision_Tools')
+    expect(projectStore.project.packFolderName).toBe('ComfyUINodeBuilder/Vision_Tools')
+    expect(wrapper.get('[data-testid="pack-switcher"]').text()).toContain('Vision Tools · ComfyUINodeBuilder/Vision_Tools')
     expect(wrapper.find('[data-testid="toolbar-pack-name"]').exists()).toBe(false)
   })
 
@@ -68,7 +68,7 @@ describe('pack switcher', () => {
     expect(wrapper.get('[data-testid="rename-pack"]').text()).toBe('')
     expect(wrapper.get('[data-testid="duplicate-pack"]').text()).toBe('')
     expect(wrapper.get('[data-testid="delete-pack"]').text()).toBe('')
-    expect(wrapper.get('[data-testid="delete-pack"]').attributes('disabled')).toBeDefined()
+    expect(wrapper.get('[data-testid="delete-pack"]').attributes('disabled')).toBeUndefined()
 
     await wrapper.get('[data-testid="create-pack"]').trigger('click')
     expect(projectStore.projectSummaries).toHaveLength(2)
@@ -82,5 +82,28 @@ describe('pack switcher', () => {
     await wrapper.get('[data-testid="delete-pack"]').trigger('click')
     expect(projectStore.projectSummaries).toHaveLength(2)
     expect(projectStore.project.id).toBe(createdId)
+  })
+
+  it('clears the pack selector when deleting the last local pack', async () => {
+    const projectStore = useProjectStore()
+    projectStore.setProjectName('Vision Tools')
+    projectStore.setPackFolderName('VisionTools')
+    const wrapper = mount(AppToolbar, {
+      props: {
+        exportDisabled: false,
+        deployInProgress: false,
+      },
+    })
+
+    await wrapper.get('[data-testid="delete-pack"]').trigger('click')
+
+    const select = wrapper.get('[data-testid="pack-switcher"]').element as HTMLSelectElement
+    expect(projectStore.activeProjectId).toBe('')
+    expect(projectStore.projectSummaries).toHaveLength(0)
+    expect(select.value).toBe('')
+    expect(wrapper.get('[data-testid="pack-switcher"]').text()).not.toContain('Vision Tools')
+    expect(wrapper.get('[data-testid="rename-pack"]').attributes('disabled')).toBeDefined()
+    expect(wrapper.get('[data-testid="duplicate-pack"]').attributes('disabled')).toBeDefined()
+    expect(wrapper.get('[data-testid="delete-pack"]').attributes('disabled')).toBeDefined()
   })
 })

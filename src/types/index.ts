@@ -68,6 +68,11 @@ export interface CustomNodeFileSpec {
   content: string
 }
 
+export interface CustomNodeDirectorySpec {
+  id: string
+  relativePath: string
+}
+
 export interface NodeSpec {
   id: string
   name: string
@@ -100,6 +105,7 @@ export interface Project {
   pythonRequirements?: string[]
   pythonInstallScript?: string
   customFiles?: CustomNodeFileSpec[]
+  customDirectories?: CustomNodeDirectorySpec[]
 }
 
 export interface ValidationError {

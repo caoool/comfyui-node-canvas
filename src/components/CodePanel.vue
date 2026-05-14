@@ -1,7 +1,7 @@
 <template>
   <div class="code-panel" :class="{ 'code-panel-focus': focusMode }">
     <div v-if="!activeFile" class="no-node">
-      Select a node to preview its generated files.
+      No pack files to preview.
     </div>
     <template v-else>
       <div class="code-toolbar">
@@ -13,7 +13,7 @@
           <div class="code-legend">
             <span v-if="activeFileIsEditable" class="legend-chip legend-editable">Editable</span>
             <span>{{ activeFileLegendText }}</span>
-            <span v-if="activeFile.persistent" class="legend-chip legend-generated">Protected</span>
+            <span v-if="activeFile.protected" class="legend-chip legend-generated">Protected</span>
             <span v-if="activeFile.kind === 'node-python'">whole file syncs with node preview</span>
             <span v-else-if="activeFile.kind === 'generated'">pack file read-only</span>
           </div>
@@ -46,10 +46,13 @@
       </div>
 
       <div class="code-workspace">
-        <aside class="file-explorer" aria-label="Selected node files">
+        <aside class="file-explorer" aria-label="Pack files">
           <div class="file-explorer-head">
             <span>Files</span>
-            <button class="tool-btn tool-btn-compact" @click="startCreatingFile">+ File</button>
+            <div class="file-create-actions">
+              <button class="tool-btn tool-btn-compact" @click="startCreatingFile">+ File</button>
+              <button data-testid="start-create-directory" class="tool-btn tool-btn-compact" @click="startCreatingDirectory">+ Dir</button>
+            </div>
           </div>
           <form v-if="creatingFile" class="new-file-form" @submit.prevent="createCustomFile">
             <input
@@ -65,34 +68,79 @@
             </div>
             <div v-if="newFileError" class="new-file-error">{{ newFileError }}</div>
           </form>
+          <form
+            v-if="creatingDirectory"
+            data-testid="create-directory"
+            class="new-file-form"
+            @submit.prevent="createCustomDirectory"
+          >
+            <input
+              v-model="newDirectoryPath"
+              data-testid="new-directory-path"
+              class="new-file-input"
+              placeholder="assets/audio"
+              spellcheck="false"
+              aria-label="New custom directory path"
+            />
+            <div class="new-file-actions">
+              <button class="tool-btn tool-btn-compact" type="submit">Create</button>
+              <button class="tool-btn tool-btn-compact" type="button" @click="cancelCreatingDirectory">Cancel</button>
+            </div>
+            <div v-if="newDirectoryError" class="new-file-error">{{ newDirectoryError }}</div>
+          </form>
           <div class="file-list" role="tablist">
-            <button
-              v-for="file in packFiles"
-              :key="file.path"
-              class="file-row"
-              :class="{
-                active: file.path === activeFile.path,
-                'file-row-error': file.path === activeFile.path && activeIssueCount > 0,
-                'file-row-node': file.kind === 'node-python',
-                'file-row-custom': file.kind === 'custom-file',
-              }"
-              role="tab"
-              :aria-selected="file.path === activeFile.path"
-              :title="file.path"
-              @click="selectFile(file.path)"
-            >
-              <span class="file-kind-dot"></span>
-              <span class="file-tab-name">{{ file.relativePath }}</span>
-              <span v-if="file.persistent" class="file-lock">locked</span>
-              <button
-                v-if="file.deletable"
-                class="file-delete"
-                title="Delete custom file"
-                @click.stop="deleteCustomFile(file)"
+            <template v-for="entry in visibleFileTreeEntries" :key="entry.id">
+              <div
+                v-if="entry.kind === 'directory'"
+                class="file-tree-directory"
+                :style="{ paddingLeft: `${6 + entry.depth * 14}px` }"
+                :data-testid="`directory-${entry.relativePath}`"
+                @click="toggleDirectory(entry.relativePath)"
               >
-                ×
+                <span
+                  class="file-dir-chevron"
+                  :class="{ collapsed: isDirectoryCollapsed(entry.relativePath) }"
+                  aria-hidden="true"
+                ></span>
+                <span class="file-tab-name">{{ entry.name }}</span>
+                <button
+                  v-if="entry.deletable"
+                  class="file-delete"
+                  :data-testid="`delete-directory-${entry.relativePath}`"
+                  title="Delete directory"
+                  @click.stop="deleteDirectory(entry.relativePath)"
+                >
+                  ×
+                </button>
+              </div>
+              <button
+                v-else
+                class="file-row"
+                :class="{
+                  active: entry.file.path === activeFile.path,
+                  'file-row-error': entry.file.path === activeFile.path && activeIssueCount > 0,
+                  'file-row-node': entry.file.kind === 'node-python',
+                  'file-row-custom': entry.file.kind === 'custom-file',
+                }"
+                role="tab"
+                :aria-selected="entry.file.path === activeFile.path"
+                :title="entry.file.path"
+                :style="{ paddingLeft: `${6 + entry.depth * 14}px` }"
+                @click="selectFile(entry.file.path)"
+              >
+                <span class="file-kind-dot"></span>
+                <span class="file-tab-name">{{ entry.name }}</span>
+                <span v-if="entry.protected" class="file-protect-chip">Protected</span>
+                <button
+                  v-if="entry.file.deletable"
+                  class="file-delete"
+                  title="Delete custom file"
+                  @click.stop="deleteCustomFile(entry.file)"
+                >
+                  ×
+                </button>
               </button>
-            </button>
+            </template>
           </div>
         </aside>
 
@@ -152,7 +200,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, ref, shallowRef, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
 import { VueMonacoEditor } from '@guolao/vue-monaco-editor'
 import type * as Monaco from 'monaco-editor'
 import { nanoid } from 'nanoid'
@@ -160,8 +208,10 @@ import { useProjectStore } from '../stores/project'
 import { useUiStore } from '../stores/ui'
 import { lintPython, type LintIssue } from '../lib/lintPython'
 import { extractPythonVariableNames } from '../lib/returnCode'
-import { buildPackCodeFiles, type PackCodeFile } from '../lib/packCodeFiles'
-import { isReservedProjectFilePath, normalizeCustomNodeFilePath } from '../lib/nodeFilePaths'
+import { buildPackCodeFileTree, buildPackCodeFiles, type PackCodeFile } from '../lib/packCodeFiles'
+import { isReservedProjectFilePath, normalizeCustomNodeDirectoryPath, normalizeCustomNodeFilePath } from '../lib/nodeFilePaths'
+import { packFolderRelativePath } from '../lib/packIdentity'
+import { listManagedPackFiles, type ManagedPackFilesystemEntry } from '../lib/writeToFilesystem'
 import { syncNodeFromPythonSource, type PythonSourceSyncIssue } from '../lib/pythonSourceSync'
 import { COMFY_EDITOR_THEME, COMFY_EDITOR_THEME_NAME } from '../lib/editorTheme'
 import {
@@ -187,6 +237,13 @@ const scanRan = ref(false)
 const creatingFile = ref(false)
 const newFilePath = ref('')
 const newFileError = ref('')
+const creatingDirectory = ref(false)
+const newDirectoryPath = ref('')
+const newDirectoryError = ref('')
+const collapsedDirectories = ref(new Set<string>())
+const filesystemEntries = ref<ManagedPackFilesystemEntry[]>([])
+const filesystemSyncKey = ref('')
+const filesystemRefreshTick = ref(0)
 
 const baseEditorOptions = computed(() => ({
   minimap: { enabled: minimapEnabled.value },
@@ -229,7 +286,26 @@ const selectedNode = computed(() => {
   return projectStore.project.nodes.find(n => n.id === uiStore.selectedNodeId) ?? null
 })
 
-const packFiles = computed(() => buildPackCodeFiles(projectStore.project, selectedNode.value?.id ?? null))
+const hasActiveProject = computed(() => Boolean(projectStore.activeProjectId))
+const packFiles = computed(() =>
+  hasActiveProject.value
+    ? buildPackCodeFiles(projectStore.project, selectedNode.value?.id ?? null, filesystemEntries.value)
+    : [],
+)
+const fileTreeEntries = computed(() =>
+  hasActiveProject.value
+    ? buildPackCodeFileTree(packFiles.value, projectStore.project.customDirectories ?? [], filesystemEntries.value)
+    : [],
+)
+const visibleFileTreeEntries = computed(() =>
+  fileTreeEntries.value.filter(entry => {
+    const parts = entry.relativePath.split('/')
+    for (let index = 1; index < parts.length; index += 1) {
+      if (collapsedDirectories.value.has(parts.slice(0, index).join('/'))) return false
+    }
+    return true
+  }),
+)
 
 const activeFile = computed<PackCodeFile | null>(() => {
   if (packFiles.value.length === 0) return null
@@ -276,6 +352,8 @@ const activeFileLegendText = computed(() => {
       return 'shared project file'
     case 'generated':
       return 'generated pack file'
+    case 'filesystem':
+      return 'deployed filesystem file'
     default:
       return ''
   }
@@ -329,6 +407,8 @@ function updateActiveFile(value: string | undefined) {
     case 'custom-file':
       updateCustomFile(value)
       break
+    case 'filesystem':
+      break
   }
 }
 
@@ -361,6 +441,7 @@ function defaultCustomFileContent(relativePath: string): string {
 }
 
 function startCreatingFile() {
+  creatingDirectory.value = false
   creatingFile.value = true
   newFilePath.value = 'helpers.py'
   newFileError.value = ''
@@ -385,6 +466,7 @@ function createCustomFile() {
     newFileError.value = 'A file with that path already exists for this project.'
     return
   }
+  expandDirectoryAncestors(relativePath)
   projectStore.updateProject({
     customFiles: [
       ...(projectStore.project.customFiles ?? []),
@@ -403,6 +485,46 @@ function createCustomFile() {
   })
 }
 
+function startCreatingDirectory() {
+  creatingFile.value = false
+  creatingDirectory.value = true
+  newDirectoryPath.value = 'assets'
+  newDirectoryError.value = ''
+}
+
+function cancelCreatingDirectory() {
+  creatingDirectory.value = false
+  newDirectoryError.value = ''
+}
+
+function createCustomDirectory() {
+  const relativePath = normalizeCustomNodeDirectoryPath(newDirectoryPath.value)
+  if (!relativePath) {
+    newDirectoryError.value = 'Use a relative directory path without empty or parent folders.'
+    return
+  }
+  if (packFiles.value.some(file => file.relativePath === relativePath)) {
+    newDirectoryError.value = 'A file already uses that path.'
+    return
+  }
+  if (fileTreeEntries.value.some(entry => entry.kind === 'directory' && entry.relativePath === relativePath)) {
+    newDirectoryError.value = 'That directory already exists.'
+    return
+  }
+  projectStore.updateProject({
+    customDirectories: [
+      ...(projectStore.project.customDirectories ?? []),
+      {
+        id: nanoid(),
+        relativePath,
+      },
+    ],
+  })
+  expandDirectoryAncestors(relativePath)
+  creatingDirectory.value = false
+  newDirectoryError.value = ''
+}
+
 function deleteCustomFile(file: PackCodeFile) {
   if (!file.deletable || file.kind !== 'custom-file') return
   projectStore.updateProject({
@@ -412,6 +534,49 @@ function deleteCustomFile(file: PackCodeFile) {
     const nextFile = packFiles.value.find(candidate => candidate.kind === 'node-python') ?? packFiles.value[0]
     activeFilePath.value = nextFile?.path ?? ''
   })
+}
+
+function deleteDirectory(relativePath: string) {
+  const directory = fileTreeEntries.value.find(entry => entry.relativePath === relativePath)
+  if (!directory || directory.kind !== 'directory' || !directory.deletable) return
+
+  const prefix = `${relativePath}/`
+  projectStore.updateProject({
+    customFiles: (projectStore.project.customFiles ?? []).filter(customFile => {
+      const normalized = normalizeCustomNodeFilePath(customFile.relativePath)
+      return normalized !== relativePath && !normalized?.startsWith(prefix)
+    }),
+    customDirectories: (projectStore.project.customDirectories ?? []).filter(customDirectory => {
+      const normalized = normalizeCustomNodeDirectoryPath(customDirectory.relativePath)
+      return normalized !== relativePath && !normalized?.startsWith(prefix)
+    }),
+  })
+  collapsedDirectories.value = new Set([...collapsedDirectories.value].filter(path => path !== relativePath && !path.startsWith(prefix)))
+  nextTick(() => {
+    const nextFile = packFiles.value.find(candidate => candidate.kind === 'node-python') ?? packFiles.value[0]
+    activeFilePath.value = nextFile?.path ?? ''
+  })
+}
+
+function isDirectoryCollapsed(relativePath: string) {
+  return collapsedDirectories.value.has(relativePath)
+}
+
+function toggleDirectory(relativePath: string) {
+  const next = new Set(collapsedDirectories.value)
+  if (next.has(relativePath)) next.delete(relativePath)
+  else next.add(relativePath)
+  collapsedDirectories.value = next
+}
+
+function expandDirectoryAncestors(relativePath: string) {
+  const parts = relativePath.split('/')
+  if (parts.length <= 1) return
+  const next = new Set(collapsedDirectories.value)
+  for (let index = 1; index < parts.length; index += 1) {
+    next.delete(parts.slice(0, index).join('/'))
+  }
+  collapsedDirectories.value = next
 }
 
 function parseRequirementLines(s: string): string[] {
@@ -431,7 +596,8 @@ function updateInstallScript(value: string | undefined) {
 }
 
 function updateCustomUiRenderer(value: string | undefined) {
-  const node = selectedNode.value
+  const nodeId = activeFile.value?.nodeId ?? selectedNode.value?.id
+  const node = nodeId ? projectStore.project.nodes.find(candidate => candidate.id === nodeId) : null
   if (!node || value === undefined) return
   projectStore.updateNode(node.id, {
     customUiRendererCode: value.trim() ? value.trimEnd() : '',
@@ -480,6 +646,27 @@ watch(() => selectedNode.value?.id ?? '', (nodeId) => {
 }, { immediate: true })
 
 watch(() => [
+  projectStore.activeProjectId,
+  projectStore.project.comfyuiInstallPath,
+  projectStore.project.packFolderName,
+  filesystemRefreshTick.value,
+] as const, async ([activeProjectId, installPath, packFolderName]) => {
+  if (!activeProjectId || !installPath || !packFolderName) {
+    filesystemEntries.value = []
+    filesystemSyncKey.value = ''
+    return
+  }
+  const syncKey = `${activeProjectId}:${installPath}:${packFolderName}`
+  filesystemSyncKey.value = syncKey
+  try {
+    const result = await listManagedPackFiles(installPath, packFolderName)
+    if (filesystemSyncKey.value === syncKey) filesystemEntries.value = result.entries
+  } catch {
+    if (filesystemSyncKey.value === syncKey) filesystemEntries.value = []
+  }
+}, { immediate: true })
+
+watch(() => [
   selectedNode.value?.id ?? '',
   projectStore.project.nodes.map(node => `${node.id}:${node.moduleCode ?? ''}:${node.code ?? ''}:${node.pythonSource ?? ''}`).join('\n---node---\n'),
   (projectStore.project.pythonRequirements ?? []).join('\n'),
@@ -511,8 +698,17 @@ watch([wordWrap, minimapEnabled, focusMode, activeFile], () => {
   nextTick(scheduleAllEditorLayouts)
 })
 
+function refreshFilesystemTree() {
+  filesystemRefreshTick.value += 1
+}
+
+onMounted(() => {
+  window.addEventListener('comfy-builder-pack-files-changed', refreshFilesystemTree)
+})
+
 onBeforeUnmount(() => {
   completionDisposable.value?.dispose()
+  window.removeEventListener('comfy-builder-pack-files-changed', refreshFilesystemTree)
 })
 
 function scheduleAllEditorLayouts() {
@@ -595,13 +791,14 @@ function registerCompletionProvider(monaco: typeof Monaco) {
 
 function pathCompletionItems(monaco: typeof Monaco, range: Monaco.IRange): Monaco.languages.CompletionItem[] {
   const installPath = projectStore.project.comfyuiInstallPath || '/home/user/ComfyUI'
+  const packPath = `custom_nodes/ComfyUINodeBuilder/${packFolderRelativePath(projectStore.project.packFolderName || projectStore.project.name)}`
   const paths = [
     installPath,
-    `${installPath.replace(/\/+$/, '')}/custom_nodes/ComfyUINodeBuilder`,
+    `${installPath.replace(/\/+$/, '')}/${packPath}`,
     `${installPath.replace(/\/+$/, '')}/models`,
     `${installPath.replace(/\/+$/, '')}/input`,
     `${installPath.replace(/\/+$/, '')}/output`,
-    'custom_nodes/ComfyUINodeBuilder',
+    packPath,
     'models/checkpoints',
     'models/loras',
     'models/vae',
@@ -687,6 +884,11 @@ function pathCompletionItems(monaco: typeof Monaco, range: Monaco.IRange): Monac
   padding: 4px 6px;
   font-size: 11px;
 }
+.file-create-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
 .new-file-form {
   display: flex;
   flex-direction: column;
@@ -763,12 +965,48 @@ function pathCompletionItems(monaco: typeof Monaco, range: Monaco.IRange): Monac
 .file-row-custom .file-kind-dot {
   background: #8dd8a4;
 }
-.file-lock {
-  margin-left: auto;
+.file-tree-directory {
+  min-width: 0;
+  min-height: 25px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
   color: var(--text-muted);
+  font: 11px var(--font-mono);
+  font-weight: 720;
+  cursor: pointer;
+  border-radius: var(--r-sm);
+  padding-right: 5px;
+}
+.file-tree-directory:hover {
+  color: var(--text);
+  background: var(--hover);
+}
+.file-dir-chevron {
+  width: 7px;
+  height: 7px;
+  border-right: 1px solid currentColor;
+  border-bottom: 1px solid currentColor;
+  transform: rotate(45deg) translateY(-1px);
+  opacity: 0.78;
+  flex: 0 0 auto;
+}
+.file-dir-chevron.collapsed {
+  transform: rotate(-45deg) translateY(1px);
+}
+.file-protect-chip {
+  margin-left: auto;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgba(231, 184, 91, 0.32);
+  border-radius: 999px;
+  padding: 0 5px;
+  color: #ffe8bd;
+  background: var(--generated-soft);
   font: 9px var(--font-sans);
   font-weight: 800;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 .file-delete {

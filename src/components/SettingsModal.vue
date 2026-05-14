@@ -8,13 +8,9 @@
         </div>
         <div class="modal-body">
           <label class="field">
-            <span class="label">Pack Name</span>
-            <input data-testid="settings-pack-name" v-model="localName" class="input" @change="saveName" placeholder="My Node Pack" />
-          </label>
-          <label class="field">
-            <span class="label">ComfyUI Folder</span>
-            <input data-testid="settings-pack-folder" v-model="localPackFolderName" class="input input-mono" @change="savePackFolderName" placeholder="ComfyUINodeBuilder" spellcheck="false" />
-            <span class="hint">Deploy target: custom_nodes/{{ activePackFolderName }}. Renaming this deploys to a new folder; old deployed folders are not removed automatically.</span>
+            <span class="label">Pack Slug</span>
+            <input data-testid="settings-pack-folder" v-model="localPackFolderName" class="input input-mono" @change="savePackFolderName" placeholder="ComfyUINodeBuilder/" spellcheck="false" />
+            <span class="hint">Deploy target: custom_nodes/ComfyUINodeBuilder/&lt;pack slug&gt;. The slug is used for builder metadata and ComfyUI categories.</span>
           </label>
           <label class="field">
             <span class="label">ComfyUI URL</span>
@@ -33,7 +29,7 @@
             <span class="check-result" :class="installClass">{{ installText }}</span>
           </div>
           <div class="info">
-            Deploy writes generated Python and builder.project.json to ComfyUI/custom_nodes/{{ activePackFolderName }}. Restart ComfyUI after deploy to load Python changes.
+            Deploy mirrors generated Python and builder.project.json to ComfyUI/custom_nodes/ComfyUINodeBuilder/{{ activePackLeaf }}. Restart ComfyUI after deploy to load Python changes.
           </div>
           <section class="pack-import">
             <div class="section-row">
@@ -102,7 +98,7 @@ import { computed, ref, watch } from 'vue'
 import { useProjectStore } from '../stores/project'
 import { checkConnection } from '../lib/comfyuiApi'
 import { listManagedProjects, validateInstallPath, type ManagedProjectSummary } from '../lib/writeToFilesystem'
-import { MANAGED_PACK_NAME } from '../lib/managedPack'
+import { DEFAULT_PACK_FOLDER_NAME, packFolderRelativePath } from '../lib/packIdentity'
 
 const props = defineProps<{ modelValue: boolean }>()
 const emit = defineEmits<{
@@ -113,24 +109,27 @@ const emit = defineEmits<{
 
 const projectStore = useProjectStore()
 
-const localName = ref(projectStore.project.name)
-const localPackFolderName = ref(projectStore.project.packFolderName || MANAGED_PACK_NAME)
+const localPackFolderName = ref(projectStore.project.packFolderName || DEFAULT_PACK_FOLDER_NAME)
 const localUrl = ref(projectStore.project.comfyuiUrl)
 const localInstallPath = ref(projectStore.project.comfyuiInstallPath)
-const connectionState = ref<'idle' | 'checking' | 'ok' | 'error'>('idle')
-const installState = ref<'idle' | 'checking' | 'ok' | 'error'>('idle')
+const connectionState = ref<'idle' | 'saved' | 'checking' | 'ok' | 'error'>(projectStore.project.comfyuiUrl ? 'saved' : 'idle')
+const installState = ref<'idle' | 'saved' | 'checking' | 'ok' | 'error'>(projectStore.project.comfyuiInstallPath ? 'saved' : 'idle')
 const installDetail = ref('')
 const loadAcknowledged = ref(false)
 const scanState = ref<'idle' | 'scanning' | 'done' | 'error'>('idle')
 const scanError = ref('')
 const discoveredPacks = ref<ManagedProjectSummary[]>([])
+let connectionCheckId = 0
+let installCheckId = 0
 
-const activePackFolderName = computed(() => projectStore.project.packFolderName || MANAGED_PACK_NAME)
+const activePackFolderName = computed(() => projectStore.project.packFolderName || DEFAULT_PACK_FOLDER_NAME)
+const activePackLeaf = computed(() => packFolderRelativePath(activePackFolderName.value))
 
 const connectionText = computed(() => {
   if (connectionState.value === 'checking') return 'Checking...'
   if (connectionState.value === 'ok') return 'Connected'
   if (connectionState.value === 'error') return 'Not reachable'
+  if (connectionState.value === 'saved') return 'Saved URL'
   return 'Not checked'
 })
 
@@ -138,6 +137,7 @@ const installText = computed(() => {
   if (installState.value === 'checking') return 'Checking...'
   if (installState.value === 'ok') return installDetail.value || 'custom_nodes found'
   if (installState.value === 'error') return installDetail.value || 'Invalid path'
+  if (installState.value === 'saved') return 'Saved path'
   return 'Not checked'
 })
 
@@ -146,46 +146,99 @@ const installClass = computed(() => `check-${installState.value}`)
 
 watch(() => props.modelValue, (open) => {
   if (open) {
-    localName.value = projectStore.project.name
-    localPackFolderName.value = projectStore.project.packFolderName || MANAGED_PACK_NAME
+    localPackFolderName.value = projectStore.project.packFolderName || DEFAULT_PACK_FOLDER_NAME
     localUrl.value = projectStore.project.comfyuiUrl
     localInstallPath.value = projectStore.project.comfyuiInstallPath
-    connectionState.value = 'idle'
-    installState.value = 'idle'
+    connectionState.value = localUrl.value.trim() ? 'saved' : 'idle'
+    installState.value = localInstallPath.value.trim() ? 'saved' : 'idle'
     installDetail.value = ''
     loadAcknowledged.value = false
     scanState.value = 'idle'
     scanError.value = ''
     discoveredPacks.value = []
+    void autoCheckSavedSettings()
   }
-})
+}, { immediate: true })
 
-function saveName() { projectStore.setProjectName(localName.value.trim()) }
 function savePackFolderName() {
   projectStore.setPackFolderName(localPackFolderName.value.trim())
-  localPackFolderName.value = projectStore.project.packFolderName || MANAGED_PACK_NAME
+  localPackFolderName.value = projectStore.project.packFolderName || DEFAULT_PACK_FOLDER_NAME
 }
-function saveUrl() { projectStore.setComfyuiUrl(localUrl.value.trim()) }
-function saveInstallPath() { projectStore.setComfyuiInstallPath(localInstallPath.value.trim()) }
+function saveUrl() {
+  const nextUrl = localUrl.value.trim()
+  projectStore.setComfyuiUrl(nextUrl)
+  connectionCheckId += 1
+  connectionState.value = nextUrl ? 'saved' : 'idle'
+  return nextUrl
+}
+function saveInstallPath() {
+  const nextPath = localInstallPath.value.trim()
+  projectStore.setComfyuiInstallPath(nextPath)
+  installCheckId += 1
+  installState.value = nextPath ? 'saved' : 'idle'
+  installDetail.value = ''
+  return nextPath
+}
 
 async function checkComfyuiConnection() {
-  saveUrl()
+  const url = saveUrl()
+  await runComfyuiConnectionCheck(url)
+}
+
+async function runComfyuiConnectionCheck(url: string) {
+  if (!url) {
+    connectionState.value = 'idle'
+    return
+  }
+  const checkId = ++connectionCheckId
   connectionState.value = 'checking'
-  connectionState.value = await checkConnection(localUrl.value.trim()) ? 'ok' : 'error'
+  try {
+    const connected = await checkConnection(url)
+    if (checkId === connectionCheckId) {
+      connectionState.value = connected ? 'ok' : 'error'
+    }
+  } catch {
+    if (checkId === connectionCheckId) {
+      connectionState.value = 'error'
+    }
+  }
 }
 
 async function checkInstallPath() {
-  saveInstallPath()
+  const installPath = saveInstallPath()
+  await runInstallPathCheck(installPath)
+}
+
+async function runInstallPathCheck(installPath: string) {
+  if (!installPath) {
+    installState.value = 'idle'
+    installDetail.value = ''
+    return
+  }
+  const checkId = ++installCheckId
   installState.value = 'checking'
   installDetail.value = ''
   try {
-    const result = await validateInstallPath(localInstallPath.value.trim())
-    installState.value = 'ok'
-    installDetail.value = result.customNodesPath
+    const result = await validateInstallPath(installPath)
+    if (checkId === installCheckId) {
+      installState.value = 'ok'
+      installDetail.value = result.customNodesPath
+    }
   } catch (err) {
-    installState.value = 'error'
-    installDetail.value = String(err)
+    if (checkId === installCheckId) {
+      installState.value = 'error'
+      installDetail.value = String(err)
+    }
   }
+}
+
+async function autoCheckSavedSettings() {
+  const url = localUrl.value.trim()
+  const installPath = localInstallPath.value.trim()
+  await Promise.allSettled([
+    runComfyuiConnectionCheck(url),
+    runInstallPathCheck(installPath),
+  ])
 }
 
 function requestLoadManagedPack() {

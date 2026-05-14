@@ -25,12 +25,12 @@ describe('project pack registry', () => {
     const projectStore = useProjectStore()
 
     expect(projectStore.project.name).toBe('Legacy Pack')
-    expect(projectStore.project.packFolderName).toBe('Legacy_Pack')
+    expect(projectStore.project.packFolderName).toBe('ComfyUINodeBuilder/Legacy_Pack')
     expect(projectStore.projectSummaries).toEqual([
       expect.objectContaining({
         id: projectStore.project.id,
         name: 'Legacy Pack',
-        packFolderName: 'Legacy_Pack',
+        packFolderName: 'ComfyUINodeBuilder/Legacy_Pack',
       }),
     ])
   })
@@ -46,7 +46,7 @@ describe('project pack registry', () => {
     projectStore.updateNode(secondNode.id, { displayName: 'Second Pack Node' })
 
     expect(projectStore.project.name).toBe('Second Pack')
-    expect(projectStore.project.packFolderName).toBe('Second_Pack')
+    expect(projectStore.project.packFolderName).toBe('ComfyUINodeBuilder/Second_Pack')
     expect(projectStore.project.nodes.map(node => node.displayName)).toEqual(['Second Pack Node'])
 
     projectStore.switchProject(projectStore.projectSummaries.find(summary => summary.name === 'ComfyUINodeBuilder')!.id)
@@ -55,7 +55,7 @@ describe('project pack registry', () => {
 
     const persisted = JSON.parse(localStorage.getItem(REGISTRY_STORAGE_KEY) ?? '{}')
     expect(persisted.projects).toHaveLength(2)
-    expect(persisted.projects.map((project: Project) => project.packFolderName).sort()).toEqual(['ComfyUINodeBuilder', 'Second_Pack'])
+    expect(persisted.projects.map((project: Project) => project.packFolderName).sort()).toEqual(['ComfyUINodeBuilder/', 'ComfyUINodeBuilder/Second_Pack'])
   })
 
   it('imports a builder-owned ComfyUI pack as a separate local pack and switches to it', () => {
@@ -75,7 +75,7 @@ describe('project pack registry', () => {
 
     expect(projectStore.project.id).toBe(imported.id)
     expect(projectStore.project.name).toBe('Imported Pack')
-    expect(projectStore.project.packFolderName).toBe('ImportedPack')
+    expect(projectStore.project.packFolderName).toBe('ComfyUINodeBuilder/ImportedPack')
     expect(projectStore.project.pythonRequirements).toEqual(['requests'])
     expect(projectStore.projectSummaries).toHaveLength(2)
   })
@@ -87,16 +87,16 @@ describe('project pack registry', () => {
     projectStore.setPackFolderName('Vision Tools')
 
     expect(projectStore.project.name).toBe('Vision Tools')
-    expect(projectStore.project.packFolderName).toBe('Vision_Tools')
+    expect(projectStore.project.packFolderName).toBe('ComfyUINodeBuilder/Vision_Tools')
 
     projectStore.createProject('Audio Tools')
     projectStore.setPackFolderName('Vision Tools')
 
     expect(projectStore.project.name).toBe('Audio Tools')
-    expect(projectStore.project.packFolderName).toBe('Vision_Tools_2')
+    expect(projectStore.project.packFolderName).toBe('ComfyUINodeBuilder/Vision_Tools_2')
     expect(projectStore.projectSummaries.map(summary => summary.packFolderName).sort()).toEqual([
-      'Vision_Tools',
-      'Vision_Tools_2',
+      'ComfyUINodeBuilder/Vision_Tools',
+      'ComfyUINodeBuilder/Vision_Tools_2',
     ])
   })
 
@@ -112,7 +112,7 @@ describe('project pack registry', () => {
 
     expect(duplicate).toEqual(expect.objectContaining({
       name: 'Vision Tools Copy',
-      packFolderName: 'VisionTools_Copy',
+      packFolderName: 'ComfyUINodeBuilder/VisionTools_Copy',
     }))
     expect(projectStore.project.id).toBe(duplicate?.id)
     expect(projectStore.project.nodes[0]).toEqual(expect.objectContaining({
@@ -126,6 +126,32 @@ describe('project pack registry', () => {
     expect(deleted).toBe(true)
     expect(projectStore.project.id).toBe(originalId)
     expect(projectStore.projectSummaries).toHaveLength(1)
-    expect(projectStore.deleteProject(originalId)).toBe(false)
+    expect(projectStore.deleteProject(originalId)).toBe(true)
+    expect(projectStore.activeProjectId).toBe('')
+    expect(projectStore.projectSummaries).toHaveLength(0)
+    expect(projectStore.project.nodes).toEqual([])
+    expect(projectStore.project.name).toBe('')
+    expect(projectStore.project.packFolderName).toBe('')
+  })
+
+  it('persists ComfyUI URL and install path as app settings after deleting all packs', () => {
+    const projectStore = useProjectStore()
+    projectStore.setComfyuiUrl('http://127.0.0.1:8199')
+    projectStore.setComfyuiInstallPath('/opt/ComfyUI')
+    projectStore.deleteProject(projectStore.project.id)
+
+    expect(projectStore.activeProjectId).toBe('')
+    expect(projectStore.project.comfyuiUrl).toBe('http://127.0.0.1:8199')
+    expect(projectStore.project.comfyuiInstallPath).toBe('/opt/ComfyUI')
+
+    setActivePinia(createPinia())
+    const reloadedStore = useProjectStore()
+    expect(reloadedStore.projectSummaries).toHaveLength(0)
+    expect(reloadedStore.project.comfyuiUrl).toBe('http://127.0.0.1:8199')
+    expect(reloadedStore.project.comfyuiInstallPath).toBe('/opt/ComfyUI')
+
+    const nextPack = reloadedStore.createProject('Next Pack')
+    expect(nextPack.comfyuiUrl).toBe('http://127.0.0.1:8199')
+    expect(nextPack.comfyuiInstallPath).toBe('/opt/ComfyUI')
   })
 })

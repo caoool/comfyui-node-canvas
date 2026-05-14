@@ -113,7 +113,7 @@ The terminal uses a shared pack-level environment and logs stdout, stderr, exit 
 
 ## AI Builder Panel
 
-The AI Builder is optional. It can use OpenAI, OpenRouter, OpenAI-compatible servers, Anthropic, Gemini, or Ollama. Configure provider, model, API key, and base URL from the AI settings popover.
+The AI Builder is optional. By default it can use your local Codex CLI login and plan without an API key. The Local Codex provider includes a **Check Codex** button, reads your Codex model catalog, and lets you choose model and reasoning effort from the settings popover. It can also use OpenAI, OpenRouter, OpenAI-compatible servers, Anthropic, Gemini, or Ollama.
 
 The AI Builder can request actions such as:
 

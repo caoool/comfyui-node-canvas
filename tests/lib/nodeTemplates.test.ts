@@ -12,6 +12,7 @@ describe('nodeTemplates', () => {
       'text-utility',
       'string-concat-preview',
       'multi-output',
+      'cosyvoice3-voice-clone',
     ])
   })
 
@@ -105,6 +106,8 @@ describe('nodeTemplates', () => {
     expect(node.pythonRequirements.some(req => req.startsWith('tensorrt-cu12'))).toBe(false)
     expect(node.pythonInstallScript).toContain('"clone", "--recursive"')
     expect(node.pythonInstallScript).toContain('https://github.com/FunAudioLLM/CosyVoice.git')
+    expect(node.pythonInstallScript).toContain('shutil.rmtree(COSYVOICE_DIR)')
+    expect(node.pythonInstallScript).not.toContain('Move it aside and retry')
     expect(node.uiOutputs?.map(p => [p.key, p.kind, p.label, p.expression])).toEqual([
       ['audio', 'audio', 'Generated audio', 'audio_preview'],
       ['text', 'text', 'Synthesis text', 'text'],
@@ -123,13 +126,15 @@ describe('nodeTemplates', () => {
     expect(node.moduleCode).not.toContain('import torchcodec')
     expect(node.moduleCode).toContain('_COSYVOICE3_END_OF_PROMPT = "<|endofprompt|>"')
     expect(node.moduleCode).toContain('def _cosyvoice3_with_endofprompt')
+    expect(node.moduleCode).toContain('def _patch_cosyvoice3_lm_dtype')
+    expect(node.moduleCode).toContain('llm.llm_decoder.to(dtype=target_dtype)')
     expect(node.moduleCode).toContain('def _cosyvoice3_log')
     expect(node.moduleCode).toContain('def _require_cosyvoice3_runtime_dependencies():')
     expect(node.moduleCode).toContain('("x-transformers", "x_transformers")')
     expect(node.moduleCode).toContain('("pyarrow", "pyarrow")')
     expect(node.moduleCode).toContain('("pyworld", "pyworld")')
     expect(node.moduleCode).toContain('("scipy", "scipy")')
-    expect(node.moduleCode).toContain('Click Deploy, then Install Dependencies')
+    expect(node.moduleCode).toContain('Click Deploy & Restart; the builder runs install.py')
     expect(node.moduleCode).toContain('class _CosyVoice3Progress')
     expect(node.moduleCode).toContain('comfy_utils.ProgressBar')
     expect(node.moduleCode).toContain('os.environ.setdefault("MPLCONFIGDIR"')
@@ -144,12 +149,14 @@ describe('nodeTemplates', () => {
     expect(node.moduleCode).toContain('AutoModel(model_dir=resolved_model_dir')
     expect(node.moduleCode).toContain('def _comfy_audio_to_prompt_wav')
     expect(node.code).toContain('cosyvoice = _get_cosyvoice3_model')
+    expect(node.moduleCode).toContain('_patch_cosyvoice3_lm_dtype(model)')
     expect(node.code).toContain('progress = _CosyVoice3Progress(7)')
     expect(node.code).toContain('_require_cosyvoice3_runtime_dependencies()')
     expect(node.code).toContain('mode = str(mode or "zero_shot").strip()')
     expect(node.code).toContain('if mode == "auto":')
-    expect(node.code).toContain('short zero_shot text')
-    expect(node.code).toContain('mode = "cross_lingual"')
+    expect(node.code).toContain('short_zero_shot_text')
+    expect(node.code).toContain('mode = "zero_shot" if reference_text else "cross_lingual"')
+    expect(node.code).toContain('CosyVoice zero_shot text is too short')
     expect(node.code).toContain('reference_text is required for zero_shot voice cloning')
     expect(node.code).toContain('_set_cosyvoice3_seed(seed)')
     expect(node.code).toContain('reference_prompt_text = _cosyvoice3_with_endofprompt(reference_text)')
@@ -161,6 +168,14 @@ describe('nodeTemplates', () => {
     expect(node.code).toContain('_cosyvoice3_log("error"')
     expect(node.code).toContain('inference_zero_shot')
     expect(node.code).not.toContain('return')
+  })
+
+  it('exposes the CosyVoice 3 managed node as a normal template id for AI and UI creation', () => {
+    const node = createNodeFromTemplate('cosyvoice3-voice-clone')
+
+    expect(node.name).toBe('CosyVoice3VoiceClone')
+    expect(node.pythonInstallScript).toContain('https://github.com/FunAudioLLM/CosyVoice.git')
+    expect(node.pythonRequirements).toContain('huggingface_hub')
   })
 
   it('uses derived returns by default for all templates', () => {

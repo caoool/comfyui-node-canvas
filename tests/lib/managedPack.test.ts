@@ -77,6 +77,33 @@ describe('managedPack', () => {
     expect(parsed.project.nodes[0].name).toBe('ImageNode')
   })
 
+  it('stores generated Python source in sync with current node fields', () => {
+    const staleSource = buildManagedPackFiles(makeProject({
+      nodes: [makeNode({
+        moduleCode: 'OLD_VALUE = 1',
+        code: 'value = "old"',
+      })],
+    }))['ImageNode.py']
+    const files = buildManagedPackFiles(makeProject({
+      nodes: [makeNode({
+        moduleCode: 'NEW_VALUE = 2',
+        code: 'value = "new"',
+        pythonSource: staleSource,
+      })],
+    }))
+    const parsed = JSON.parse(files[BUILDER_METADATA_FILE])
+    const node = parsed.project.nodes[0]
+
+    expect(files['ImageNode.py']).toContain('NEW_VALUE = 2')
+    expect(files['ImageNode.py']).toContain('value = "new"')
+    expect(node.moduleCode).toBe('NEW_VALUE = 2')
+    expect(node.code).toBe('value = "new"')
+    expect(node.pythonSource).toContain('NEW_VALUE = 2')
+    expect(node.pythonSource).toContain('value = "new"')
+    expect(node.pythonSource).not.toContain('OLD_VALUE = 1')
+    expect(node.pythonSource).not.toContain('value = "old"')
+  })
+
   it('parses current managed metadata wrapper', () => {
     const project = makeProject({ name: 'Loaded' })
     const loaded = parseManagedProjectFile(buildManagedPackFiles(project)[BUILDER_METADATA_FILE])

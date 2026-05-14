@@ -35,7 +35,7 @@ import CodePanel from './components/CodePanel.vue'
 import { useProjectStore } from './stores/project'
 import { useUiStore } from './stores/ui'
 import { exportZip, downloadBlob } from './lib/exportZip'
-import { deployManagedPack, installManagedDependencies, readManagedProject } from './lib/writeToFilesystem'
+import { deployManagedPack, installManagedDependencies, readManagedProject, validateInstallPath } from './lib/writeToFilesystem'
 import { validateProject } from './lib/validate'
 import { MANAGED_PACK_NAME } from './lib/managedPack'
 import { checkConnection, restartComfyUI } from './lib/comfyuiApi'
@@ -61,11 +61,25 @@ onMounted(() => {
   if (!uiStore.selectedNodeId && projectStore.project.nodes.length > 0) {
     uiStore.selectNode(projectStore.project.nodes[0].id)
   }
+  void checkSavedComfyUIInstallPath()
 })
 
 watch(() => projectStore.project.id, () => {
   uiStore.selectNode(projectStore.project.nodes[0]?.id ?? null)
 })
+
+async function checkSavedComfyUIInstallPath() {
+  const installPath = projectStore.project.comfyuiInstallPath.trim()
+  if (!installPath) {
+    uiStore.addDiagnostic('warning', 'Set ComfyUI install path', 'Open Settings and set the ComfyUI install path before deploy/load.')
+    return
+  }
+  try {
+    await validateInstallPath(installPath)
+  } catch (err) {
+    uiStore.addDiagnostic('error', 'ComfyUI install path invalid', String(err))
+  }
+}
 
 async function onExportZip() {
   try {
@@ -152,13 +166,17 @@ async function onDeploy() {
     const pipeline = await runDeployPipeline({
       deploy: async () => {
         statusText.value = 'Deploying managed pack...'
-        return deployManagedPack(comfyuiInstallPath, deployProject)
+        const result = await deployManagedPack(comfyuiInstallPath, deployProject)
+        window.dispatchEvent(new CustomEvent('comfy-builder-pack-files-changed'))
+        return result
       },
       installDependencies: async () => {
         dependencyInstallInProgress.value = true
-        statusText.value = 'Installing dependencies...'
+        statusText.value = 'Running pack setup...'
         try {
-          return await installManagedDependencies(comfyuiInstallPath, deployProject.packFolderName || MANAGED_PACK_NAME)
+          const result = await installManagedDependencies(comfyuiInstallPath, deployProject.packFolderName || MANAGED_PACK_NAME)
+          window.dispatchEvent(new CustomEvent('comfy-builder-pack-files-changed'))
+          return result
         } finally {
           dependencyInstallInProgress.value = false
         }
@@ -204,7 +222,7 @@ async function onDeploy() {
     uiStore.addDiagnostic(
       'error',
       'Deploy pipeline failed',
-      `${String(err)}\n\nDeploy now runs Deploy -> Install Dependencies when needed -> Restart ComfyUI. This requires ComfyUI Extension Manager for the restart step.`,
+      `${String(err)}\n\nDeploy runs Deploy -> Pack setup (install.py and requirements.txt when present) -> Restart ComfyUI. This requires ComfyUI Extension Manager for the restart step.`,
     )
   } finally {
     deployInProgress.value = false

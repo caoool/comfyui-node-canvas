@@ -1,5 +1,6 @@
 import { stdin, stdout } from 'process'
 import { AI_SKILLS, systemPromptForSkills } from '../src/lib/aiSkills.ts'
+import { buildManagedPackFiles } from '../src/lib/managedPack.ts'
 import { validateProject } from '../src/lib/validate.ts'
 import type { Project } from '../src/types/index.ts'
 
@@ -86,49 +87,7 @@ const TOOLS = [
 ]
 
 function buildMcpPackFiles(project: Project): Record<string, string> {
-  const files: Record<string, string> = {}
-  for (const node of project.nodes ?? []) {
-    files[`${node.name || 'CustomNode'}.py`] = node.pythonSource || [
-      node.moduleCode || '',
-      '',
-      `class ${node.name || 'CustomNode'}:`,
-      '    @classmethod',
-      '    def INPUT_TYPES(cls):',
-      '        return {"required": {}}',
-      '',
-      '    RETURN_TYPES = ()',
-      '    FUNCTION = "execute"',
-      `    CATEGORY = ${JSON.stringify(node.category || project.name || 'ComfyUINodeBuilder')}`,
-      '',
-      '    def execute(self):',
-      '        return ()',
-      '',
-      `NODE_CLASS_MAPPINGS = {${JSON.stringify(node.name || 'CustomNode')}: ${node.name || 'CustomNode'}}`,
-      `NODE_DISPLAY_NAME_MAPPINGS = {${JSON.stringify(node.name || 'CustomNode')}: ${JSON.stringify(node.displayName || node.name || 'Custom Node')}}`,
-      '',
-    ].join('\n')
-  }
-  const nodeNames = (project.nodes ?? []).map(node => node.name).filter(Boolean)
-  files['__init__.py'] = [
-    ...nodeNames.map(name => `from .${name} import NODE_CLASS_MAPPINGS as ${name}_MAPPINGS, NODE_DISPLAY_NAME_MAPPINGS as ${name}_DISPLAY_MAPPINGS`),
-    '',
-    'NODE_CLASS_MAPPINGS = {}',
-    'NODE_DISPLAY_NAME_MAPPINGS = {}',
-    ...nodeNames.map(name => `NODE_CLASS_MAPPINGS.update(${name}_MAPPINGS)`),
-    ...nodeNames.map(name => `NODE_DISPLAY_NAME_MAPPINGS.update(${name}_DISPLAY_MAPPINGS)`),
-    '',
-    '__all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS"]',
-    '',
-  ].join('\n')
-  for (const file of project.customFiles ?? []) files[file.relativePath] = file.content
-  if (project.pythonRequirements?.length) files['requirements.txt'] = `${project.pythonRequirements.join('\n')}\n`
-  if (project.pythonInstallScript?.trim()) files['install.py'] = `${project.pythonInstallScript.trimEnd()}\n`
-  files['builder.project.json'] = `${JSON.stringify({
-    builder: 'comfyui-node-builder',
-    schemaVersion: 1,
-    project,
-  }, null, 2)}\n`
-  return files
+  return buildManagedPackFiles(project)
 }
 
 function textContent(value: unknown) {

@@ -40,7 +40,7 @@ describe('contract builder defaults', () => {
 
   it('creates standard starter templates under the builder category by default', () => {
     for (const template of NODE_TEMPLATES) {
-      expect(createNodeFromTemplate(template.id).category).toBe('ComfyUINodeBuilder')
+      expect(createNodeFromTemplate(template.id).category.startsWith('ComfyUINodeBuilder')).toBe(true)
     }
   })
 

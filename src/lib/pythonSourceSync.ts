@@ -372,8 +372,13 @@ export function patchPythonSourceFromNode(
     return { text: source, issues }
   }
 
-  const moduleCode = next.moduleCode !== current.moduleCode ? next.moduleCode : sections.moduleCode
-  const code = next.code !== current.code ? next.code : sections.code ?? next.code
+  const sourceCode = sections.code ?? next.code
+  const moduleCode = next.moduleCode !== current.moduleCode || current.moduleCode !== sections.moduleCode
+    ? next.moduleCode
+    : sections.moduleCode
+  const code = next.code !== current.code || current.code !== sourceCode
+    ? next.code
+    : sourceCode
   return {
     text: generatePython({ ...next, moduleCode, code }),
     issues,

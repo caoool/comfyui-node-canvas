@@ -27,6 +27,27 @@ describe('deployPipeline', () => {
     expect(result.backOnline).toBe(true)
   })
 
+  it('runs dependency installation when deploy writes install.py without requirements.txt', async () => {
+    const installDependencies = vi.fn(async () => ({
+      success: true as const,
+      python: 'python',
+      requirementsPath: 'requirements.txt',
+      installScriptPath: 'install.py',
+      stdout: '',
+      stderr: '',
+    }))
+
+    const result = await runDeployPipeline({
+      deploy: vi.fn(async () => ({ success: true, path: '/pack', filesWritten: ['Node.py', 'install.py'], restartRequired: true })),
+      installDependencies,
+      restart: vi.fn(async () => {}),
+      waitForRestart: vi.fn(async () => true),
+    })
+
+    expect(installDependencies).toHaveBeenCalledTimes(1)
+    expect(result.installedDependencies).toBe(true)
+  })
+
   it('skips dependency install when the deployed pack has no dependency files', async () => {
     const installDependencies = vi.fn()
 

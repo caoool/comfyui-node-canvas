@@ -10,7 +10,7 @@ type SpawnResult = {
   on: (event: 'close' | 'error', cb: (value: number | Error | null) => void) => unknown
   kill?: () => void
 }
-type SpawnFn = (command: string, args: string[], options: { cwd: string }) => SpawnResult
+type SpawnFn = (command: string, args: string[], options: { cwd: string; env: NodeJS.ProcessEnv }) => SpawnResult
 
 class CommandFailedError extends Error {
   command: string
@@ -77,7 +77,14 @@ async function runCommand(command: string, args: string[], cwd: string, spawn: S
   return await new Promise<{ stdout: string; stderr: string }>((resolve, reject) => {
     let stdout = ''
     let stderr = ''
-    const child = spawn(command, args, { cwd })
+    const child = spawn(command, args, {
+      cwd,
+      env: {
+        ...process.env,
+        GIT_CEILING_DIRECTORIES: cwd,
+        GIT_DISCOVERY_ACROSS_FILESYSTEM: '0',
+      },
+    })
     const timer = setTimeout(() => {
       child.kill?.()
       reject(new Error(`Dependency installation timed out after ${Math.round(timeoutMs / 1000)} seconds.`))
@@ -116,18 +123,18 @@ function isMissingPip(error: unknown): boolean {
 async function installRequirements(
   python: string,
   requirementsPath: string,
-  installPath: string,
+  cwd: string,
   spawn: SpawnFn,
   timeoutMs: number,
 ): Promise<{ stdout: string; stderr: string }> {
   try {
-    return await runCommand(python, ['-m', 'pip', 'install', '-r', requirementsPath], installPath, spawn, timeoutMs)
+    return await runCommand(python, ['-m', 'pip', 'install', '-r', requirementsPath], cwd, spawn, timeoutMs)
   } catch (error) {
     if (!isMissingPip(error)) throw error
     return await runCommand(
       'uv',
       ['pip', 'install', '--python', python, '-r', requirementsPath],
-      installPath,
+      cwd,
       spawn,
       timeoutMs,
     )
@@ -144,6 +151,7 @@ export async function installManagedPackDependencies(
   const exists = options.exists ?? existsSync
   const spawn = options.spawn ?? nodeSpawn as unknown as SpawnFn
   const timeoutMs = options.timeoutMs ?? 30 * 60 * 1000
+  const packDir = managedPackDirFor(installPath, packName)
   const requirementsPath = requirementsPathFor(installPath, packName)
   const installScriptPath = installScriptPathFor(installPath, packName)
   const hasRequirements = exists(requirementsPath)
@@ -158,8 +166,8 @@ export async function installManagedPackDependencies(
   }
 
   const outputs: Array<{ stdout: string; stderr: string }> = []
-  if (hasInstallScript) outputs.push(await runCommand(python, [installScriptPath], installPath, spawn, timeoutMs))
-  if (hasRequirements) outputs.push(await installRequirements(python, requirementsPath, installPath, spawn, timeoutMs))
+  if (hasInstallScript) outputs.push(await runCommand(python, [installScriptPath], packDir, spawn, timeoutMs))
+  if (hasRequirements) outputs.push(await installRequirements(python, requirementsPath, packDir, spawn, timeoutMs))
 
   return {
     success: true,

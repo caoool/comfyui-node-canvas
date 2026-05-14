@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
 import { nanoid } from 'nanoid'
-import type { CustomNodeFileSpec, Project, NodeSpec } from '../types/index'
+import type { CustomNodeDirectorySpec, CustomNodeFileSpec, Project, NodeSpec } from '../types/index'
 import { createNodeFromTemplate, nodeForPythonGeneration, pythonInstallScriptForNode, pythonRequirementsForNode, type NodeTemplateId } from '../lib/nodeTemplates'
 import { migrateLegacyReturnCode } from '../lib/returnCode'
 import { patchPythonSourceFromNode } from '../lib/pythonSourceSync'
@@ -11,6 +11,7 @@ import { DEFAULT_PACK_FOLDER_NAME, normalizePackFolderName, uniquePackFolderName
 const STORAGE_KEY = 'comfyui-node-builder-project'
 const REGISTRY_STORAGE_KEY = 'comfyui-node-builder-pack-registry'
 const REGISTRY_SCHEMA_VERSION = 1
+const DEFAULT_COMFYUI_URL = 'http://127.0.0.1:8188'
 const OLD_STRING_CONCAT_PREVIEW_CODE = 'concat = f"{left_text}\\n{right_text}"\nreturn {"ui": {"text": [concat]}, "result": (concat,)}'
 const STRING_CONCAT_PREVIEW_CODE = 'concat = f"{left_text}\\n{right_text}"\nreturn {"ui": {"text": (concat,)}, "result": (concat,)}'
 
@@ -18,6 +19,8 @@ interface ProjectRegistry {
   schemaVersion: typeof REGISTRY_SCHEMA_VERSION
   activeProjectId: string
   projects: Project[]
+  comfyuiUrl: string
+  comfyuiInstallPath: string
 }
 
 export interface ProjectSummary {
@@ -33,11 +36,27 @@ function defaultProject(): Project {
     name: 'ComfyUINodeBuilder',
     packFolderName: DEFAULT_PACK_FOLDER_NAME,
     nodes: [],
-    comfyuiUrl: 'http://127.0.0.1:8188',
+    comfyuiUrl: DEFAULT_COMFYUI_URL,
     comfyuiInstallPath: '',
     pythonRequirements: [],
     pythonInstallScript: '',
     customFiles: [],
+    customDirectories: [],
+  }
+}
+
+function unsetProject(comfyuiUrl = DEFAULT_COMFYUI_URL, comfyuiInstallPath = ''): Project {
+  return {
+    id: '',
+    name: '',
+    packFolderName: '',
+    nodes: [],
+    comfyuiUrl,
+    comfyuiInstallPath,
+    pythonRequirements: [],
+    pythonInstallScript: '',
+    customFiles: [],
+    customDirectories: [],
   }
 }
 
@@ -107,6 +126,22 @@ function normalizeCustomFiles(files: CustomNodeFileSpec[] | undefined): CustomNo
   return normalizedFiles
 }
 
+function normalizeCustomDirectories(directories: CustomNodeDirectorySpec[] | undefined): CustomNodeDirectorySpec[] {
+  const normalizedDirectories: CustomNodeDirectorySpec[] = []
+  const seen = new Set<string>()
+  for (const directory of directories ?? []) {
+    const relativePath = normalizeCustomNodeFilePath(directory.relativePath)
+    if (!relativePath || seen.has(relativePath)) continue
+    seen.add(relativePath)
+    normalizedDirectories.push({
+      ...directory,
+      id: directory.id || nanoid(),
+      relativePath,
+    })
+  }
+  return normalizedDirectories
+}
+
 function mergeRequirementLists(...lists: Array<string[] | undefined>): string[] {
   const merged: string[] = []
   const seen = new Set<string>()
@@ -157,6 +192,7 @@ function normalizeProject(project: Project): Project {
       ? project.pythonInstallScript?.trimEnd() ?? ''
       : mergeInstallScripts(...nodes.map(node => pythonInstallScriptForNode(node))),
     customFiles: normalizeCustomFiles([...projectCustomFiles, ...legacyCustomFiles]),
+    customDirectories: normalizeCustomDirectories(project.customDirectories),
     nodes: nodes.map(node => ({ ...node, customFiles: [] })),
   }
 }
@@ -172,7 +208,7 @@ function normalizeProjectList(rawProjects: Project[]): Project[] {
     )
     projects.push(normalized)
   }
-  return projects.length > 0 ? projects : [defaultProject()]
+  return projects
 }
 
 function loadRegistry(): ProjectRegistry {
@@ -183,8 +219,15 @@ function loadRegistry(): ProjectRegistry {
       const projects = normalizeProjectList(Array.isArray(parsed.projects) ? parsed.projects : [])
       const activeProjectId = projects.some(project => project.id === parsed.activeProjectId)
         ? String(parsed.activeProjectId)
-        : projects[0].id!
-      return { schemaVersion: REGISTRY_SCHEMA_VERSION, activeProjectId, projects }
+        : projects[0]?.id ?? ''
+      const activeProject = projects.find(project => project.id === activeProjectId) ?? projects[0]
+      return {
+        schemaVersion: REGISTRY_SCHEMA_VERSION,
+        activeProjectId,
+        projects,
+        comfyuiUrl: typeof parsed.comfyuiUrl === 'string' ? parsed.comfyuiUrl : activeProject?.comfyuiUrl ?? DEFAULT_COMFYUI_URL,
+        comfyuiInstallPath: typeof parsed.comfyuiInstallPath === 'string' ? parsed.comfyuiInstallPath : activeProject?.comfyuiInstallPath ?? '',
+      }
     }
   } catch {}
 
@@ -196,6 +239,8 @@ function loadRegistry(): ProjectRegistry {
         schemaVersion: REGISTRY_SCHEMA_VERSION,
         activeProjectId: projects[0].id!,
         projects,
+        comfyuiUrl: projects[0].comfyuiUrl || DEFAULT_COMFYUI_URL,
+        comfyuiInstallPath: projects[0].comfyuiInstallPath || '',
       }
     }
   } catch {}
@@ -205,6 +250,8 @@ function loadRegistry(): ProjectRegistry {
     schemaVersion: REGISTRY_SCHEMA_VERSION,
     activeProjectId: project.id!,
     projects: [project],
+    comfyuiUrl: project.comfyuiUrl,
+    comfyuiInstallPath: project.comfyuiInstallPath,
   }
 }
 
@@ -212,8 +259,8 @@ function saveRegistry(registry: ProjectRegistry) {
   localStorage.setItem(REGISTRY_STORAGE_KEY, JSON.stringify(registry))
 }
 
-function activeProjectFrom(projects: Project[], activeProjectId: string): Project {
-  return projects.find(project => project.id === activeProjectId) ?? projects[0]
+function activeProjectFrom(projects: Project[], activeProjectId: string): Project | null {
+  return projects.find(project => project.id === activeProjectId) ?? projects[0] ?? null
 }
 
 function uniqueProjectName(base: string, projects: Project[], excludeId: string | null = null): string {
@@ -233,6 +280,7 @@ function duplicateProjectTree(source: Project, projects: Project[]): Project {
   cloned.name = copyName
   cloned.packFolderName = uniquePackFolderName(`${source.packFolderName || normalizePackFolderName(source.name)}_Copy`, projects)
   cloned.customFiles = normalizeCustomFiles(cloned.customFiles).map(file => ({ ...file, id: nanoid() }))
+  cloned.customDirectories = normalizeCustomDirectories(cloned.customDirectories).map(directory => ({ ...directory, id: nanoid() }))
   cloned.nodes = cloned.nodes.map(node => {
     portIdMap.clear()
     const inputs = node.inputs.map(port => {
@@ -267,7 +315,14 @@ export const useProjectStore = defineStore('project', () => {
   const initialRegistry = loadRegistry()
   const projects = ref<Project[]>(initialRegistry.projects)
   const activeProjectId = ref(initialRegistry.activeProjectId)
-  const project = computed<Project>(() => activeProjectFrom(projects.value, activeProjectId.value))
+  const comfyuiUrl = ref(initialRegistry.comfyuiUrl)
+  const comfyuiInstallPath = ref(initialRegistry.comfyuiInstallPath)
+  const project = computed<Project>(() => {
+    const current = activeProjectFrom(projects.value, activeProjectId.value)
+    return current
+      ? { ...current, comfyuiUrl: comfyuiUrl.value, comfyuiInstallPath: comfyuiInstallPath.value }
+      : unsetProject(comfyuiUrl.value, comfyuiInstallPath.value)
+  })
   const projectSummaries = computed<ProjectSummary[]>(() => projects.value.map(project => ({
     id: project.id!,
     name: project.name,
@@ -276,16 +331,28 @@ export const useProjectStore = defineStore('project', () => {
   })))
   saveRegistry(initialRegistry)
 
-  watch([projects, activeProjectId], ([nextProjects, nextActiveProjectId]) => {
+  watch([projects, activeProjectId, comfyuiUrl, comfyuiInstallPath], ([nextProjects, nextActiveProjectId, nextComfyuiUrl, nextComfyuiInstallPath]) => {
     saveRegistry({
       schemaVersion: REGISTRY_SCHEMA_VERSION,
       activeProjectId: nextActiveProjectId,
       projects: nextProjects,
+      comfyuiUrl: nextComfyuiUrl,
+      comfyuiInstallPath: nextComfyuiInstallPath,
     })
   }, { deep: true, flush: 'sync' })
 
   function activeProject(): Project {
-    return project.value
+    const current = activeProjectFrom(projects.value, activeProjectId.value)
+    if (current) return current
+    const nextProject = normalizeProject({
+      ...defaultProject(),
+      id: nanoid(),
+      comfyuiUrl: comfyuiUrl.value,
+      comfyuiInstallPath: comfyuiInstallPath.value,
+    })
+    projects.value.push(nextProject)
+    activeProjectId.value = nextProject.id!
+    return nextProject
   }
 
   function addNode(templateId: NodeTemplateId = 'blank'): NodeSpec {
@@ -335,6 +402,8 @@ export const useProjectStore = defineStore('project', () => {
   function updateProject(patch: Partial<Project>) {
     const current = activeProject()
     Object.assign(current, patch)
+    if (typeof patch.comfyuiUrl === 'string') comfyuiUrl.value = patch.comfyuiUrl
+    if (typeof patch.comfyuiInstallPath === 'string') comfyuiInstallPath.value = patch.comfyuiInstallPath
     if (Object.prototype.hasOwnProperty.call(patch, 'packFolderName')) {
       current.packFolderName = uniquePackFolderName(current.packFolderName || current.name, projects.value, current.id ?? null)
     }
@@ -395,15 +464,18 @@ export const useProjectStore = defineStore('project', () => {
   }
 
   function setComfyuiUrl(url: string) {
-    activeProject().comfyuiUrl = url
+    comfyuiUrl.value = url
+    const current = activeProjectFrom(projects.value, activeProjectId.value)
+    if (current) current.comfyuiUrl = url
   }
 
   function setComfyuiInstallPath(path: string) {
-    activeProject().comfyuiInstallPath = path
+    comfyuiInstallPath.value = path
+    const current = activeProjectFrom(projects.value, activeProjectId.value)
+    if (current) current.comfyuiInstallPath = path
   }
 
   function createProject(name = 'New Pack'): Project {
-    const current = activeProject()
     const packFolderName = uniquePackFolderName(name, projects.value)
     const nextProject = normalizeProject({
       ...defaultProject(),
@@ -411,11 +483,12 @@ export const useProjectStore = defineStore('project', () => {
       name: uniqueProjectName(name, projects.value),
       packFolderName,
       nodes: [],
-      comfyuiUrl: current.comfyuiUrl,
-      comfyuiInstallPath: current.comfyuiInstallPath,
+      comfyuiUrl: comfyuiUrl.value,
+      comfyuiInstallPath: comfyuiInstallPath.value,
       pythonRequirements: [],
       pythonInstallScript: '',
       customFiles: [],
+      customDirectories: [],
     })
     projects.value.push(nextProject)
     activeProjectId.value = nextProject.id!
@@ -432,9 +505,13 @@ export const useProjectStore = defineStore('project', () => {
   }
 
   function deleteProject(id = activeProjectId.value): boolean {
-    if (projects.value.length <= 1) return false
     const index = projects.value.findIndex(project => project.id === id)
     if (index < 0) return false
+    if (projects.value.length <= 1) {
+      projects.value.splice(index, 1)
+      activeProjectId.value = ''
+      return true
+    }
     const deletingActive = activeProjectId.value === id
     projects.value.splice(index, 1)
     if (deletingActive) {
@@ -447,21 +524,31 @@ export const useProjectStore = defineStore('project', () => {
     const nextProject = projects.value.find(project => project.id === id)
     if (!nextProject) return null
     activeProjectId.value = nextProject.id!
+    nextProject.comfyuiUrl = comfyuiUrl.value
+    nextProject.comfyuiInstallPath = comfyuiInstallPath.value
     return nextProject
   }
 
   function importProject(nextProject: Project): Project {
     const normalized = normalizeProject(nextProject)
+    const nextComfyuiUrl = normalized.comfyuiUrl || comfyuiUrl.value
+    const nextComfyuiInstallPath = normalized.comfyuiInstallPath || comfyuiInstallPath.value
+    comfyuiUrl.value = nextComfyuiUrl
+    comfyuiInstallPath.value = nextComfyuiInstallPath
     const existingIndex = projects.value.findIndex(project => (
       normalizePackFolderName(project.packFolderName || project.name) === normalizePackFolderName(normalized.packFolderName || normalized.name)
     ))
     if (existingIndex >= 0) {
       normalized.id = projects.value[existingIndex].id
       normalized.packFolderName = projects.value[existingIndex].packFolderName
+      normalized.comfyuiUrl = nextComfyuiUrl
+      normalized.comfyuiInstallPath = nextComfyuiInstallPath
       projects.value[existingIndex] = normalized
     } else {
       normalized.id = normalized.id || nanoid()
       normalized.packFolderName = uniquePackFolderName(normalized.packFolderName || normalized.name, projects.value, normalized.id)
+      normalized.comfyuiUrl = nextComfyuiUrl
+      normalized.comfyuiInstallPath = nextComfyuiInstallPath
       projects.value.push(normalized)
     }
     activeProjectId.value = normalized.id!
@@ -472,6 +559,8 @@ export const useProjectStore = defineStore('project', () => {
     project,
     projects,
     activeProjectId,
+    comfyuiUrl,
+    comfyuiInstallPath,
     projectSummaries,
     addNode,
     removeNode,

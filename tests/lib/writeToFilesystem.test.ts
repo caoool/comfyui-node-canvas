@@ -36,7 +36,7 @@ describe('writeToFilesystem', () => {
     } satisfies Project
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       ok: true,
-      json: async () => ({ success: true, path: '/ComfyUI/custom_nodes/MyPack', filesWritten: [], restartRequired: true }),
+      json: async () => ({ success: true, path: '/ComfyUI/custom_nodes/ComfyUINodeBuilder', filesWritten: [], restartRequired: true }),
     } as Response)
 
     await deployManagedPack('/ComfyUI', project)
@@ -44,7 +44,7 @@ describe('writeToFilesystem', () => {
 
     expect(JSON.parse(String((fetchMock.mock.calls[0][1] as RequestInit).body))).toMatchObject({
       installPath: '/ComfyUI',
-      packName: 'MyPack',
+      packName: 'ComfyUINodeBuilder/MyPack',
     })
     expect(JSON.parse(String((fetchMock.mock.calls[1][1] as RequestInit).body))).toEqual({
       installPath: '/ComfyUI',
@@ -52,10 +52,10 @@ describe('writeToFilesystem', () => {
     })
   })
 
-  it('lists builder-owned packs from ComfyUI through the helper server', async () => {
+  it('lists the builder-owned pack from ComfyUI through the helper server', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       ok: true,
-      json: async () => ({ packs: [{ packName: 'MyPack', path: '/ComfyUI/custom_nodes/MyPack/builder.project.json', project: { name: 'My Pack', nodes: [] } }] }),
+      json: async () => ({ packs: [{ packName: 'MyPack', path: '/ComfyUI/custom_nodes/ComfyUINodeBuilder/builder.project.json', project: { name: 'My Pack', nodes: [] } }] }),
     } as Response)
 
     const result = await listManagedProjects('/ComfyUI')

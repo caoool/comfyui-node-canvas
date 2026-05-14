@@ -7,17 +7,33 @@
       @export-zip="emit('export-zip')"
       @deploy="emit('deploy')"
     />
-    <div class="panels">
-      <aside class="panel panel-library" :style="{ width: `${leftWidth}px` }">
-        <slot name="library" />
-      </aside>
-      <div class="resizer" title="Resize node manager" @mousedown="startResize('left', $event)"></div>
-      <main class="panel panel-definition">
-        <slot name="definition" />
-      </main>
-      <div class="resizer" title="Resize code workspace" @mousedown="startResize('code', $event)"></div>
-      <aside class="panel panel-code" :style="{ width: `${codeWidth}px` }">
-        <slot name="code" />
+    <div class="workbench">
+      <div class="panels">
+        <aside class="panel panel-library" :style="{ width: `${leftWidth}px` }">
+          <slot name="library" />
+        </aside>
+        <div class="resizer" title="Resize node manager" @mousedown="startResize('left', $event)"></div>
+        <main class="panel panel-definition">
+          <slot name="definition" />
+        </main>
+        <div class="resizer" title="Resize code workspace" @mousedown="startResize('code', $event)"></div>
+        <aside class="panel panel-code" :style="{ width: `${codeWidth}px` }">
+          <slot name="code" />
+        </aside>
+      </div>
+      <div
+        v-if="uiStore.aiPanelOpen"
+        class="ai-resizer"
+        title="Resize AI builder"
+        @mousedown="startAiResize"
+      ></div>
+      <aside
+        v-if="uiStore.aiPanelOpen"
+        data-testid="ai-right-panel"
+        class="panel panel-ai"
+        :style="{ width: `${aiWidth}px` }"
+      >
+        <AiChatPanel @deploy="emit('deploy')" />
       </aside>
     </div>
     <div
@@ -33,26 +49,13 @@
     >
       <TerminalPanel />
     </section>
-    <div
-      v-if="uiStore.aiPanelOpen"
-      class="ai-resizer"
-      title="Resize AI builder"
-      @mousedown="startAiResize"
-    ></div>
-    <section
-      v-if="uiStore.aiPanelOpen"
-      class="ai-shell"
-      :style="{ height: `${aiHeight}px` }"
-    >
-      <AiChatPanel @deploy="emit('deploy')" />
-    </section>
     <AppStatusBar :status-text="statusText" @settings="emit('settings')" />
     <ToastNotification />
   </div>
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import AppToolbar from './AppToolbar.vue'
 import AppStatusBar from './AppStatusBar.vue'
 import TerminalPanel from './TerminalPanel.vue'
@@ -74,19 +77,21 @@ const emit = defineEmits<{
 }>()
 
 const uiStore = useUiStore()
-const LAYOUT_VERSION = 'terminal-layout-v1'
+const LAYOUT_VERSION = 'right-ai-layout-v1'
 const RESIZER_WIDTH = 12
 const MIN_LEFT_WIDTH = 260
 const MAX_LEFT_WIDTH = 560
-const MIN_CODE_WIDTH = 460
-const MIN_DEFINITION_WIDTH = 380
+const MIN_CODE_WIDTH = 360
+const MIN_DEFINITION_WIDTH = 280
+const MIN_AI_WIDTH = 340
+const MAX_AI_WIDTH = 620
 const MIN_TERMINAL_HEIGHT = 180
 const MAX_TERMINAL_HEIGHT = 520
 
 const leftWidth = ref(MIN_LEFT_WIDTH)
 const codeWidth = ref(MIN_CODE_WIDTH)
 const terminalHeight = ref(280)
-const aiHeight = ref(360)
+const aiWidth = ref(MIN_AI_WIDTH)
 
 onMounted(() => {
   const hasCurrentLayout = localStorage.getItem('layout.version') === LAYOUT_VERSION
@@ -97,7 +102,7 @@ onMounted(() => {
     ? Number(localStorage.getItem('layout.codeWidth')) || maxCodeWidth()
     : maxCodeWidth()
   terminalHeight.value = Number(localStorage.getItem('layout.terminalHeight')) || 280
-  aiHeight.value = Number(localStorage.getItem('layout.aiHeight')) || 360
+  aiWidth.value = Number(localStorage.getItem('layout.aiWidth')) || MIN_AI_WIDTH
   normalizeLayout(true)
   window.addEventListener('resize', handleWindowResize)
 })
@@ -106,37 +111,49 @@ onBeforeUnmount(() => {
   window.removeEventListener('resize', handleWindowResize)
 })
 
+watch(() => uiStore.aiPanelOpen, () => normalizeLayout(true))
+
 function clamp(value: number, min: number, max: number): number {
   if (max < min) return min
   return Math.min(Math.max(value, min), max)
 }
 
+function workbenchContentWidth(): number {
+  const aiReserve = uiStore.aiPanelOpen ? aiWidth.value + RESIZER_WIDTH : 0
+  return Math.max(MIN_LEFT_WIDTH + MIN_CODE_WIDTH + MIN_DEFINITION_WIDTH + (RESIZER_WIDTH * 2), window.innerWidth - aiReserve)
+}
+
 function maxLeftWidth(): number {
   return Math.min(
     MAX_LEFT_WIDTH,
-    Math.max(MIN_LEFT_WIDTH, window.innerWidth - MIN_CODE_WIDTH - MIN_DEFINITION_WIDTH - RESIZER_WIDTH),
+    Math.max(MIN_LEFT_WIDTH, workbenchContentWidth() - MIN_CODE_WIDTH - MIN_DEFINITION_WIDTH - RESIZER_WIDTH),
   )
 }
 
 function maxCodeWidth(): number {
-  return Math.max(MIN_CODE_WIDTH, window.innerWidth - leftWidth.value - MIN_DEFINITION_WIDTH - RESIZER_WIDTH)
+  return Math.max(MIN_CODE_WIDTH, workbenchContentWidth() - leftWidth.value - MIN_DEFINITION_WIDTH - (RESIZER_WIDTH * 2))
 }
 
 function maxTerminalHeight(): number {
   return Math.min(MAX_TERMINAL_HEIGHT, Math.max(MIN_TERMINAL_HEIGHT, Math.floor(window.innerHeight * 0.46)))
 }
 
+function maxAiWidth(): number {
+  const coreMinWidth = MIN_LEFT_WIDTH + MIN_CODE_WIDTH + MIN_DEFINITION_WIDTH + (RESIZER_WIDTH * 3)
+  return Math.min(MAX_AI_WIDTH, Math.max(MIN_AI_WIDTH, window.innerWidth - coreMinWidth))
+}
+
 function normalizeLayout(persist = false) {
+  aiWidth.value = clamp(aiWidth.value, MIN_AI_WIDTH, maxAiWidth())
   leftWidth.value = clamp(leftWidth.value, MIN_LEFT_WIDTH, maxLeftWidth())
   codeWidth.value = clamp(codeWidth.value, MIN_CODE_WIDTH, maxCodeWidth())
   terminalHeight.value = clamp(terminalHeight.value, MIN_TERMINAL_HEIGHT, maxTerminalHeight())
-  aiHeight.value = clamp(aiHeight.value, MIN_TERMINAL_HEIGHT, maxTerminalHeight())
   if (persist) {
     localStorage.setItem('layout.version', LAYOUT_VERSION)
     localStorage.setItem('layout.leftWidth', String(leftWidth.value))
     localStorage.setItem('layout.codeWidth', String(codeWidth.value))
     localStorage.setItem('layout.terminalHeight', String(terminalHeight.value))
-    localStorage.setItem('layout.aiHeight', String(aiHeight.value))
+    localStorage.setItem('layout.aiWidth', String(aiWidth.value))
   }
 }
 
@@ -198,13 +215,15 @@ function startTerminalResize(event: MouseEvent) {
 
 function startAiResize(event: MouseEvent) {
   event.preventDefault()
-  const startY = event.clientY
-  const startHeight = aiHeight.value
+  const startX = event.clientX
+  const startWidth = aiWidth.value
 
   function onMove(moveEvent: MouseEvent) {
-    const dy = startY - moveEvent.clientY
-    aiHeight.value = clamp(startHeight + dy, MIN_TERMINAL_HEIGHT, maxTerminalHeight())
-    localStorage.setItem('layout.aiHeight', String(aiHeight.value))
+    const dx = startX - moveEvent.clientX
+    aiWidth.value = clamp(startWidth + dx, MIN_AI_WIDTH, maxAiWidth())
+    codeWidth.value = clamp(codeWidth.value, MIN_CODE_WIDTH, maxCodeWidth())
+    localStorage.setItem('layout.aiWidth', String(aiWidth.value))
+    localStorage.setItem('layout.codeWidth', String(codeWidth.value))
   }
 
   function onUp() {
@@ -230,6 +249,12 @@ function startAiResize(event: MouseEvent) {
   color: var(--text);
   font-family: var(--font-sans);
 }
+.workbench {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
 .panels {
   display: flex;
   flex: 1;
@@ -254,6 +279,12 @@ function startAiResize(event: MouseEvent) {
   flex-shrink: 0;
   overflow: hidden;
   box-shadow: -1px 0 0 var(--border-subtle) inset;
+}
+.panel-ai {
+  flex-shrink: 0;
+  overflow: hidden;
+  box-shadow: 1px 0 0 rgba(255,255,255,0.035) inset, -1px 0 0 var(--border-subtle) inset;
+  background: var(--panel);
 }
 .resizer {
   width: 6px;
@@ -284,26 +315,20 @@ function startAiResize(event: MouseEvent) {
     var(--bg);
 }
 .ai-resizer {
-  height: 6px;
+  width: 6px;
   flex-shrink: 0;
-  cursor: row-resize;
+  cursor: col-resize;
   background:
-    linear-gradient(180deg, transparent, rgba(148,163,184,0.2), transparent),
+    linear-gradient(90deg, transparent, rgba(148,163,184,0.2), transparent),
     var(--bg);
   transition: background 120ms ease;
 }
 .ai-resizer:hover {
   background:
-    linear-gradient(180deg, transparent, rgba(104,167,255,0.68), transparent),
+    linear-gradient(90deg, transparent, rgba(104,167,255,0.68), transparent),
     var(--bg);
 }
 .terminal-shell {
-  flex: 0 0 auto;
-  min-height: 0;
-  overflow: hidden;
-  background: var(--bg);
-}
-.ai-shell {
   flex: 0 0 auto;
   min-height: 0;
   overflow: hidden;
@@ -318,16 +343,22 @@ function startAiResize(event: MouseEvent) {
   user-select: none;
 }
 :global(body.is-ai-resizing) {
-  cursor: row-resize;
+  cursor: col-resize;
   user-select: none;
 }
 @media (max-width: 760px) {
-  .panels {
+  .workbench {
     flex-direction: column;
     overflow: auto;
   }
+  .panels {
+    flex-direction: column;
+    flex: 0 0 auto;
+    overflow: visible;
+  }
   .panel-library,
-  .panel-code {
+  .panel-code,
+  .panel-ai {
     width: 100% !important;
     flex: 0 0 auto;
   }
@@ -341,6 +372,9 @@ function startAiResize(event: MouseEvent) {
   .panel-code {
     min-height: 560px;
   }
+  .panel-ai {
+    min-height: 620px;
+  }
   .resizer {
     display: none;
   }
@@ -352,9 +386,6 @@ function startAiResize(event: MouseEvent) {
   }
   .terminal-shell {
     height: 420px !important;
-  }
-  .ai-shell {
-    height: 520px !important;
   }
 }
 </style>

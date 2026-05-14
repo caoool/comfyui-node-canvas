@@ -33,7 +33,27 @@ describe('terminal panel', () => {
     await flushPromises()
 
     expect(wrapper.find('.panel-library').attributes('style')).toContain('width: 260px')
-    expect(wrapper.find('.panel-code').attributes('style')).toContain('width: 628px')
+    expect(wrapper.find('.panel-code').attributes('style')).toContain('width: 364px')
+  })
+
+  it('renders the AI builder as a persistent right panel by default', async () => {
+    const uiStore = useUiStore()
+    const wrapper = mount(AppLayout, {
+      props: {
+        statusText: 'Ready',
+      },
+      slots: {
+        library: '<div>Nodes</div>',
+        definition: '<div>Preview</div>',
+        code: '<div>Code</div>',
+      },
+    })
+    await flushPromises()
+
+    expect(uiStore.aiPanelOpen).toBe(true)
+    expect(wrapper.find('[data-testid="ai-right-panel"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="ai-right-panel"]').attributes('style')).toContain('width: 340px')
+    expect(wrapper.find('.ai-resizer').exists()).toBe(true)
   })
 
   it('toggles the terminal from the bottom status bar', async () => {
@@ -54,10 +74,11 @@ describe('terminal panel', () => {
       props: { statusText: 'Ready' },
     })
 
+    expect(uiStore.aiPanelOpen).toBe(true)
     await wrapper.find('[aria-label="AI"]').trigger('click')
 
-    expect(uiStore.aiPanelOpen).toBe(true)
-    expect(wrapper.find('[aria-label="AI"]').classes()).toContain('active')
+    expect(uiStore.aiPanelOpen).toBe(false)
+    expect(wrapper.find('[aria-label="AI"]').classes()).not.toContain('active')
   })
 
   it('runs commands for the selected node and records terminal logs', async () => {

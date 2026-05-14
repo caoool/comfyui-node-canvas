@@ -15,6 +15,10 @@ export function normalizeCustomNodeFilePath(path: string): string | null {
   return parts.join('/')
 }
 
+export function normalizeCustomNodeDirectoryPath(path: string): string | null {
+  return normalizeCustomNodeFilePath(path.replace(/\/+$/g, ''))
+}
+
 export function isPersistentNodeFilePath(relativePath: string, nodeName: string): boolean {
   return relativePath === `${nodeName}.py` ||
     relativePath === 'requirements.txt' ||

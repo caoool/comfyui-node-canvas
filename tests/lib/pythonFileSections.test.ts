@@ -31,7 +31,7 @@ function makeNode(overrides: Partial<NodeSpec> = {}): NodeSpec {
 describe('pythonFileSections', () => {
   it('builds one full Python file view with file path and editable ranges', () => {
     const view = buildPythonFileView(makeNode(), '/home/lu/ComfyUI')
-    expect(view.filePath).toBe('/home/lu/ComfyUI/custom_nodes/ComfyUINodeBuilder/TextUtility.py')
+    expect(view.filePath).toBe('/home/lu/ComfyUI/custom_nodes/ComfyUINodeBuilder/ComfyUINodeBuilder/TextUtility.py')
     expect(view.text).toContain('import json\nROOT = "/tmp"\n\nclass TextUtility:')
     expect(view.text).toContain('    def execute(self, string1, string2):\n        combined = string1 + string2')
     expect(view.editable.module.startOffset).toBeLessThan(view.editable.module.endOffset)

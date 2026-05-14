@@ -1,4 +1,6 @@
-export type AiProviderId = 'openai' | 'openai-compatible' | 'openrouter' | 'anthropic' | 'gemini' | 'ollama'
+import { runCodexExec, streamCodexProvider } from './codexProvider.ts'
+
+export type AiProviderId = 'codex' | 'openai' | 'openai-compatible' | 'openrouter' | 'anthropic' | 'gemini' | 'ollama'
 
 export interface AiMessage {
   role: 'system' | 'user' | 'assistant'
@@ -10,6 +12,7 @@ export interface AiProviderRequest {
   apiKey?: string
   baseUrl?: string
   model: string
+  reasoningEffort?: string
   messages: AiMessage[]
   temperature?: number
 }
@@ -319,6 +322,7 @@ export async function streamAiProvider(
   sink: AiStreamSink,
   fetchImpl: FetchLike = fetch,
 ): Promise<AiProviderResult> {
+  if (request.provider === 'codex') return streamCodexProvider(request, sink)
   if (!request.model?.trim()) throw new Error('AI model is required')
   if (request.provider === 'anthropic') return streamAnthropic(request, sink, fetchImpl)
   if (request.provider === 'gemini') return streamGemini(request, sink, fetchImpl)
@@ -391,6 +395,7 @@ async function callOllama(request: AiProviderRequest, fetchImpl: FetchLike): Pro
 }
 
 export async function callAiProvider(request: AiProviderRequest, fetchImpl: FetchLike = fetch): Promise<AiProviderResult> {
+  if (request.provider === 'codex') return runCodexExec(request)
   if (!request.model?.trim()) throw new Error('AI model is required')
   if (request.provider === 'anthropic') return callAnthropic(request, fetchImpl)
   if (request.provider === 'gemini') return callGemini(request, fetchImpl)
@@ -526,6 +531,9 @@ function parseOllamaModels(data: unknown): AiModelInfo[] {
 }
 
 export async function listAiModels(request: AiModelListRequest, fetchImpl: FetchLike = fetch): Promise<AiModelListResult> {
+  if (request.provider === 'codex') {
+    return { models: [{ id: '__codex_default__', label: 'Codex default', rank: 1000 }] }
+  }
   const baseUrl = modelBaseUrl(request)
   if (request.provider === 'anthropic') {
     const data = await getJson(fetchImpl, `${baseUrl}/v1/models`, {

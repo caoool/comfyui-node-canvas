@@ -10,6 +10,7 @@ export type NodeTemplateId =
   | 'text-utility'
   | 'string-concat-preview'
   | 'multi-output'
+  | 'cosyvoice3-voice-clone'
 
 export interface NodeTemplate {
   id: NodeTemplateId
@@ -26,6 +27,7 @@ export const NODE_TEMPLATES: NodeTemplate[] = [
   { id: 'text-utility', label: 'Text Utility', description: 'STRING widget input and output scaffold.' },
   { id: 'string-concat-preview', label: 'String Concat Preview', description: 'Two STRING inputs, runtime text preview, and one concat STRING output.' },
   { id: 'multi-output', label: 'Multi-output', description: 'One IMAGE input returning IMAGE and MASK.' },
+  { id: 'cosyvoice3-voice-clone', label: 'CosyVoice 3 Voice Clone', description: 'Zero-shot voice cloning with reference AUDIO, text controls, and AUDIO output.' },
 ]
 
 const TEMPLATE_NAMES: Record<NodeTemplateId, { name: string; displayName: string; category: string }> = {
@@ -37,6 +39,7 @@ const TEMPLATE_NAMES: Record<NodeTemplateId, { name: string; displayName: string
   'text-utility': { name: 'TextUtility', displayName: 'Text Utility', category: 'ComfyUINodeBuilder' },
   'string-concat-preview': { name: 'StringConcatPreview', displayName: 'String Concat Preview', category: 'ComfyUINodeBuilder' },
   'multi-output': { name: 'ImageAndMask', displayName: 'Image and Mask', category: 'ComfyUINodeBuilder' },
+  'cosyvoice3-voice-clone': { name: 'CosyVoice3VoiceClone', displayName: 'CosyVoice 3 Voice Clone', category: 'ComfyUINodeBuilder/audio' },
 }
 
 function port(name: string, type: string, patch: Partial<PortSpec> = {}): PortSpec {
@@ -98,7 +101,7 @@ else:
 
 _COSYVOICE3_MODEL_CACHE = {}
 _COSYVOICE3_AUDIO_LOADER_PATCHED = False
-_COSYVOICE3_INSTALL_HINT = "In the builder: Click Deploy, then Install Dependencies, then restart ComfyUI."
+_COSYVOICE3_INSTALL_HINT = "In the builder: Click Deploy & Restart; the builder runs install.py and requirements.txt setup before restarting ComfyUI."
 _COSYVOICE3_END_OF_PROMPT = "<|endofprompt|>"
 _COSYVOICE3_DEFAULT_INSTRUCTION = "You are a helpful assistant."
 _COSYVOICE3_RUNTIME_MODULES = (
@@ -256,6 +259,43 @@ def _patch_cosyvoice3_audio_loader():
     _cosyvoice3_log("audio_loader", "patched CosyVoice load_wav without TorchCodec")
 
 
+def _patch_cosyvoice3_lm_dtype(cosyvoice):
+    model = getattr(cosyvoice, "model", None)
+    llm = getattr(model, "llm", None)
+    if llm is None or getattr(llm, "_builder_dtype_patch", False):
+        return
+    original_inference_wrapper = llm.inference_wrapper
+    target_dtype = None
+    try:
+        target_dtype = llm.llm.model.model.embed_tokens.weight.dtype
+    except Exception:
+        try:
+            target_dtype = next(llm.llm.parameters()).dtype
+        except Exception:
+            target_dtype = None
+    if target_dtype is not None:
+        try:
+            llm.speech_embedding.to(dtype=target_dtype)
+        except Exception:
+            pass
+        try:
+            llm.llm_decoder.to(dtype=target_dtype)
+        except Exception:
+            pass
+        try:
+            llm.llm_embedding.to(dtype=target_dtype)
+        except Exception:
+            pass
+
+    def _builder_dtype_safe_inference_wrapper(lm_input, sampling, min_len, max_len, uuid):
+        if target_dtype is not None and torch.is_floating_point(lm_input):
+            lm_input = lm_input.to(target_dtype)
+        yield from original_inference_wrapper(lm_input, sampling, min_len, max_len, uuid)
+
+    llm.inference_wrapper = _builder_dtype_safe_inference_wrapper
+    llm._builder_dtype_patch = True
+
+
 def _resolve_cosyvoice3_model_dir(model_dir):
     model_dir = str(model_dir or "").strip()
     if not model_dir:
@@ -297,7 +337,9 @@ def _get_cosyvoice3_model(model_dir, fp16):
         _COSYVOICE3_MODEL_CACHE[cache_key] = AutoModel(model_dir=resolved_model_dir, fp16=use_fp16)
     else:
         _cosyvoice3_log("model_load", f"cache=hit path={resolved_model_dir} fp16={use_fp16}")
-    return _COSYVOICE3_MODEL_CACHE[cache_key]
+    model = _COSYVOICE3_MODEL_CACHE[cache_key]
+    _patch_cosyvoice3_lm_dtype(model)
+    return model
 
 
 def _audio_waveform_channels(audio):
@@ -444,13 +486,17 @@ try:
     if mode not in ("auto", "zero_shot", "cross_lingual"):
         raise ValueError(f"Unsupported mode: {mode}. Use auto, zero_shot, or cross_lingual.")
     reference_text = str(reference_text or "").strip()
-    short_zero_shot_text = bool(reference_text) and len(str(text).strip()) < 0.5 * len(reference_text)
+    text_clean = str(text).strip()
+    short_zero_shot_text = bool(reference_text) and len(text_clean) < 0.5 * len(reference_text)
     if mode == "auto":
-        mode = "cross_lingual" if short_zero_shot_text or not reference_text else "zero_shot"
+        mode = "zero_shot" if reference_text else "cross_lingual"
         _cosyvoice3_log("mode", f"auto_selected={mode}")
     if mode == "zero_shot" and short_zero_shot_text:
-        _cosyvoice3_log("quality_warning", "short zero_shot text detected; switching to cross_lingual to avoid CosyVoice low-quality path")
-        mode = "cross_lingual"
+        raise ValueError(
+            "CosyVoice zero_shot text is too short compared with reference_text. "
+            "Use a longer synthesis text, or trim reference_text/reference_audio to a shorter matching prompt. "
+            "Do not use cross_lingual for same-language voice cloning because it ignores reference_text."
+        )
     if mode == "zero_shot" and not reference_text:
         raise ValueError("reference_text is required for zero_shot voice cloning. Enter the exact transcript of reference_audio, or set mode to cross_lingual only when the reference audio language differs from the synthesis text.")
     if mode == "cross_lingual" and reference_text:
@@ -505,6 +551,7 @@ finally:
             _cosyvoice3_log("cleanup", f"failed to remove prompt_wav={prompt_wav}: {exc}")`
 
 const COSYVOICE3_INSTALL_SCRIPT = `import os
+import shutil
 import subprocess
 import sys
 
@@ -526,7 +573,8 @@ if os.path.isdir(os.path.join(COSYVOICE_DIR, ".git")):
     run(["git", "-C", COSYVOICE_DIR, "submodule", "update", "--init", "--recursive"])
 else:
     if os.path.exists(COSYVOICE_DIR):
-        raise RuntimeError(f"{COSYVOICE_DIR} exists but is not a git checkout. Move it aside and retry.")
+        print(f"Removing incomplete CosyVoice checkout at {COSYVOICE_DIR}", flush=True)
+        shutil.rmtree(COSYVOICE_DIR)
     run(["git", "clone", "--recursive", COSYVOICE_REPO, COSYVOICE_DIR])
 
 print("CosyVoice source is available at", COSYVOICE_DIR)
@@ -566,6 +614,67 @@ const COSYVOICE3_RUNTIME_REQUIREMENTS = [
   'wget',
   'x-transformers==2.11.24',
 ]
+
+const COSYVOICE3_ENDOFPROMPT_HELPERS = `_COSYVOICE3_END_OF_PROMPT = "<|endofprompt|>"
+_COSYVOICE3_DEFAULT_INSTRUCTION = "You are a helpful assistant."
+
+
+def _cosyvoice3_with_endofprompt(value):
+    value = str(value or "").strip()
+    if _COSYVOICE3_END_OF_PROMPT in value:
+        return value
+    if value:
+        return f"{_COSYVOICE3_DEFAULT_INSTRUCTION}{_COSYVOICE3_END_OF_PROMPT}{value}"
+    return f"{_COSYVOICE3_DEFAULT_INSTRUCTION}{_COSYVOICE3_END_OF_PROMPT}"
+
+
+def _builder_cosyvoice3_quality_warnings(text, prompt_text):
+    text_len = len(str(text or "").strip())
+    prompt_len = len(str(prompt_text or "").strip())
+    if text_len == 0:
+        print("[ComfyUINodeBuilder][CosyVoice3][quality_warning] text is empty", flush=True)
+    if prompt_len == 0:
+        print("[ComfyUINodeBuilder][CosyVoice3][quality_warning] prompt text is empty", flush=True)
+    if text_len > 0 and prompt_len > 0 and text_len < max(8, prompt_len // 4):
+        print("[ComfyUINodeBuilder][CosyVoice3][quality_warning] synthesis text is much shorter than prompt text; output quality may be poor", flush=True)`
+
+const COSYVOICE3_DTYPE_PATCH_HELPER = `def _patch_cosyvoice3_lm_dtype(cosyvoice):
+    model = getattr(cosyvoice, "model", None)
+    llm = getattr(model, "llm", None)
+    if llm is None or getattr(llm, "_builder_dtype_patch", False):
+        return
+    original_inference_wrapper = llm.inference_wrapper
+    target_dtype = None
+    try:
+        target_dtype = llm.llm.model.model.embed_tokens.weight.dtype
+    except Exception:
+        try:
+            target_dtype = next(llm.llm.parameters()).dtype
+        except Exception:
+            target_dtype = None
+    if target_dtype is not None:
+        try:
+            llm.speech_embedding.to(dtype=target_dtype)
+        except Exception:
+            pass
+        try:
+            llm.llm_decoder.to(dtype=target_dtype)
+        except Exception:
+            pass
+        try:
+            llm.llm_embedding.to(dtype=target_dtype)
+        except Exception:
+            pass
+
+    def _builder_dtype_safe_inference_wrapper(lm_input, sampling, min_len, max_len, uuid):
+        import torch as _torch
+
+        if target_dtype is not None and _torch.is_floating_point(lm_input):
+            lm_input = lm_input.to(target_dtype)
+        yield from original_inference_wrapper(lm_input, sampling, min_len, max_len, uuid)
+
+    llm.inference_wrapper = _builder_dtype_safe_inference_wrapper
+    llm._builder_dtype_patch = True`
 
 const COSYVOICE3_MANAGED_NODE_NAME = 'CosyVoice3VoiceClone'
 const COSYVOICE3_MODE_OPTIONS = ['auto', 'zero_shot', 'cross_lingual']
@@ -621,6 +730,7 @@ function shouldUseLatestCosyVoiceModuleCode(node: Pick<NodeSpec, 'name' | 'modul
   if (node.name !== COSYVOICE3_MANAGED_NODE_NAME) return false
   const moduleCode = node.moduleCode ?? ''
   if (!moduleCode.trim()) return true
+  if (moduleCode.includes('_patch_cosyvoice3_lm_dtype') && !moduleCode.includes('llm.llm_decoder.to(dtype=target_dtype)')) return true
   if (moduleCode.includes('_set_cosyvoice3_seed')) return false
   return moduleCode.includes('_cosyvoice3_with_endofprompt') ||
     moduleCode.includes('_patch_cosyvoice3_audio_loader') ||
@@ -633,6 +743,7 @@ function shouldUseLatestCosyVoiceExecuteCode(node: Pick<NodeSpec, 'name' | 'code
   if (node.name !== COSYVOICE3_MANAGED_NODE_NAME) return false
   const code = node.code ?? ''
   if (!code.trim()) return true
+  if (code.includes('short zero_shot text detected; switching to cross_lingual')) return true
   if (code.includes('short_zero_shot_text') && code.includes('mode == "auto"')) return false
   return code.includes('_cosyvoice3_with_endofprompt') ||
     code.includes('cosyvoice.inference_cross_lingual') ||
@@ -737,7 +848,137 @@ function addCosyVoicePreflightToExecuteCode(code: string): string {
   return code.replace(afterTextValidation, `${afterTextValidation}    _require_cosyvoice3_runtime_dependencies()\n`)
 }
 
+function looksLikeGenericCosyVoice3Node(node: NodeSpec): boolean {
+  if (node.name === COSYVOICE3_MANAGED_NODE_NAME) return false
+  const searchable = [
+    node.name,
+    node.displayName,
+    node.moduleCode,
+    node.code,
+    node.pythonSource ?? '',
+  ].join('\n')
+  if (!/inference_(zero_shot|cross_lingual|sft)/.test(searchable)) return false
+  return /CosyVoice3|Fun-CosyVoice3|_ensure_cosyvoice_import_path|vendor[\\/]+CosyVoice/i.test(searchable)
+}
+
+function appendPythonHelper(moduleCode: string, helper: string): string {
+  const prefix = moduleCode.trimEnd()
+  return prefix ? `${prefix}\n\n${helper}` : helper
+}
+
+function replaceTopLevelPythonFunction(moduleCode: string, functionName: string, replacement: string): string {
+  const lines = moduleCode.split('\n')
+  const start = lines.findIndex(line => line.startsWith(`def ${functionName}(`))
+  if (start < 0) return appendPythonHelper(moduleCode, replacement)
+
+  let end = start + 1
+  while (end < lines.length) {
+    const line = lines[end]
+    const isTopLevelCode = line.trim() !== '' && !line.startsWith(' ') && !line.startsWith('\t')
+    if (isTopLevelCode) break
+    end += 1
+  }
+
+  const before = lines.slice(0, start).join('\n').trimEnd()
+  const after = lines.slice(end).join('\n').trimStart()
+  return [before, replacement, after].filter(part => part.length > 0).join('\n\n')
+}
+
+function addCosyVoiceGenericRuntimeHelpers(moduleCode: string): string {
+  let next = moduleCode
+  if (!next.includes('_cosyvoice3_with_endofprompt')) {
+    next = appendPythonHelper(next, COSYVOICE3_ENDOFPROMPT_HELPERS)
+  }
+  if (!next.includes('_patch_cosyvoice3_lm_dtype')) {
+    next = appendPythonHelper(next, COSYVOICE3_DTYPE_PATCH_HELPER)
+  } else if (!next.includes('llm.llm_decoder.to(dtype=target_dtype)')) {
+    next = replaceTopLevelPythonFunction(next, '_patch_cosyvoice3_lm_dtype', COSYVOICE3_DTYPE_PATCH_HELPER)
+  }
+  return next
+}
+
+function patchCosyVoiceZeroShotCall(code: string, promptVariable: string): { code: string, changed: boolean } {
+  const textExpr = [
+    'text.strip\\(\\)',
+    'text_clean',
+    'str\\(text\\)\\.strip\\(\\)',
+    'str\\(text\\)',
+    'str\\(text\\s+or\\s+["\']["\']\\)\\.strip\\(\\)',
+  ].join('|')
+  const promptExpr = [
+    `${promptVariable}\\.strip\\(\\)`,
+    `${promptVariable}_clean`,
+    `str\\(${promptVariable}\\)\\.strip\\(\\)`,
+    `str\\(${promptVariable}\\)`,
+    `str\\(${promptVariable}\\s+or\\s+["\']["\']\\)\\.strip\\(\\)`,
+  ].join('|')
+  const callPattern = new RegExp(`cosyvoice\\.inference_zero_shot\\(\\s*(?:${textExpr})\\s*,\\s*(?:${promptExpr})\\s*,`, 'g')
+  const patched = code.replace(callPattern, 'cosyvoice.inference_zero_shot(text_for_cosyvoice, prompt_text_for_cosyvoice,')
+  return { code: patched, changed: patched !== code }
+}
+
+function insertCosyVoiceEndOfPromptAssignments(code: string, promptVariable: string): string {
+  if (code.includes('text_for_cosyvoice = _cosyvoice3_with_endofprompt(text)')) return code
+  const lines = code.split('\n')
+  const callLineIndex = lines.findIndex(line => line.includes('cosyvoice.inference_zero_shot('))
+  if (callLineIndex < 0) return code
+  const indent = lines[callLineIndex].match(/^\s*/)?.[0] ?? ''
+  const assignments = [
+    `${indent}text_for_cosyvoice = str(text or "").strip()`,
+    `${indent}prompt_text_for_cosyvoice = _cosyvoice3_with_endofprompt(${promptVariable})`,
+    `${indent}_builder_cosyvoice3_quality_warnings(text_for_cosyvoice, prompt_text_for_cosyvoice)`,
+    '',
+  ]
+  return [
+    ...lines.slice(0, callLineIndex),
+    ...assignments,
+    ...lines.slice(callLineIndex),
+  ].join('\n')
+}
+
+function insertCosyVoiceRuntimePatchCall(code: string): string {
+  if (code.includes('_patch_cosyvoice3_lm_dtype(cosyvoice)')) return code
+  const lines = code.split('\n')
+  const modelLineIndex = lines.findIndex(line => (
+    /^\s*cosyvoice\s*=/.test(line) &&
+    (line.includes('AutoModel(') || line.includes('_get_cosyvoice'))
+  ))
+  const callLineIndex = modelLineIndex >= 0
+    ? modelLineIndex + 1
+    : lines.findIndex(line => line.includes('cosyvoice.inference_zero_shot('))
+  if (callLineIndex < 0) return code
+  const indent = lines[Math.max(0, callLineIndex - 1)].match(/^\s*/)?.[0] ?? ''
+  return [
+    ...lines.slice(0, callLineIndex),
+    `${indent}_patch_cosyvoice3_lm_dtype(cosyvoice)`,
+    ...lines.slice(callLineIndex),
+  ].join('\n')
+}
+
+function patchGenericCosyVoice3Node(node: NodeSpec): NodeSpec {
+  let code = node.code ?? ''
+  let changed = false
+  for (const promptVariable of ['prompt_text', 'reference_text']) {
+    const result = patchCosyVoiceZeroShotCall(code, promptVariable)
+    code = result.code
+    changed = changed || result.changed
+    if (result.changed) {
+      code = insertCosyVoiceEndOfPromptAssignments(code, promptVariable)
+      break
+    }
+  }
+  const moduleCode = addCosyVoiceGenericRuntimeHelpers(node.moduleCode ?? '')
+  const codeWithRuntimePatch = insertCosyVoiceRuntimePatchCall(code)
+  if (!changed && moduleCode === (node.moduleCode ?? '') && codeWithRuntimePatch === (node.code ?? '')) return node
+  return {
+    ...node,
+    moduleCode,
+    code: codeWithRuntimePatch,
+  }
+}
+
 export function nodeForPythonGeneration(node: NodeSpec): NodeSpec {
+  if (looksLikeGenericCosyVoice3Node(node)) return patchGenericCosyVoice3Node(node)
   if (node.name !== COSYVOICE3_MANAGED_NODE_NAME) return node
   const upgradedNode = ensureCosyVoiceContract(node)
   return {
@@ -841,6 +1082,7 @@ export function createCosyVoice3VoiceCloneNode(): NodeSpec {
 }
 
 export function createNodeFromTemplate(templateId: NodeTemplateId): NodeSpec {
+  if (templateId === 'cosyvoice3-voice-clone') return createCosyVoice3VoiceCloneNode()
   const base = TEMPLATE_NAMES[templateId]
   const node: NodeSpec = {
     id: nanoid(),

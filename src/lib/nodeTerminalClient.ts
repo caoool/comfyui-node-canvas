@@ -63,5 +63,14 @@ export async function runNodeTerminalCommand(
   selectedNodeId: string | null | undefined,
   command: string,
 ): Promise<NodeTerminalResult> {
-  return postJson('/node-terminal/run', buildNodeTerminalPayload(project, selectedNodeId, command))
+  const result = await postJson<Partial<NodeTerminalResult>>('/node-terminal/run', buildNodeTerminalPayload(project, selectedNodeId, command))
+  return {
+    success: true,
+    command: typeof result.command === 'string' ? result.command : command,
+    exitCode: typeof result.exitCode === 'number' ? result.exitCode : 1,
+    stdout: typeof result.stdout === 'string' ? result.stdout : '',
+    stderr: typeof result.stderr === 'string' ? result.stderr : '',
+    cwd: typeof result.cwd === 'string' ? result.cwd : '',
+    envPath: typeof result.envPath === 'string' ? result.envPath : '',
+  }
 }

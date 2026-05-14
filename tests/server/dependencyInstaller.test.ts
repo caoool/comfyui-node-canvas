@@ -3,10 +3,10 @@ import { installManagedPackDependencies, installScriptPathFor, requirementsPathF
 
 describe('dependencyInstaller', () => {
   it('resolves requirements.txt inside the managed pack', () => {
-    expect(requirementsPathFor('/ComfyUI')).toBe('/ComfyUI/custom_nodes/ComfyUINodeBuilder/requirements.txt')
-    expect(installScriptPathFor('/ComfyUI')).toBe('/ComfyUI/custom_nodes/ComfyUINodeBuilder/install.py')
-    expect(requirementsPathFor('/ComfyUI', 'MyPack')).toBe('/ComfyUI/custom_nodes/MyPack/requirements.txt')
-    expect(installScriptPathFor('/ComfyUI', 'MyPack')).toBe('/ComfyUI/custom_nodes/MyPack/install.py')
+    expect(requirementsPathFor('/ComfyUI')).toBe('/ComfyUI/custom_nodes/ComfyUINodeBuilder/ComfyUINodeBuilder/requirements.txt')
+    expect(installScriptPathFor('/ComfyUI')).toBe('/ComfyUI/custom_nodes/ComfyUINodeBuilder/ComfyUINodeBuilder/install.py')
+    expect(requirementsPathFor('/ComfyUI', 'MyPack')).toBe('/ComfyUI/custom_nodes/ComfyUINodeBuilder/MyPack/requirements.txt')
+    expect(installScriptPathFor('/ComfyUI', 'MyPack')).toBe('/ComfyUI/custom_nodes/ComfyUINodeBuilder/MyPack/install.py')
   })
 
   it('prefers ComfyUI virtualenv python executables', () => {
@@ -35,8 +35,8 @@ describe('dependencyInstaller', () => {
       'pip',
       'install',
       '-r',
-      '/ComfyUI/custom_nodes/ComfyUINodeBuilder/requirements.txt',
-    ], expect.objectContaining({ cwd: '/ComfyUI' }))
+      '/ComfyUI/custom_nodes/ComfyUINodeBuilder/ComfyUINodeBuilder/requirements.txt',
+    ], expect.objectContaining({ cwd: '/ComfyUI/custom_nodes/ComfyUINodeBuilder/ComfyUINodeBuilder' }))
     expect(result.stdout).toBe('ok')
   })
 
@@ -50,20 +50,26 @@ describe('dependencyInstaller', () => {
     await installManagedPackDependencies('/ComfyUI', 'MyPack', {
       exists: (candidate) =>
         candidate === '/ComfyUI/.venv/bin/python' ||
-        candidate === '/ComfyUI/custom_nodes/MyPack/requirements.txt' ||
-        candidate === '/ComfyUI/custom_nodes/MyPack/install.py',
+        candidate === '/ComfyUI/custom_nodes/ComfyUINodeBuilder/MyPack/requirements.txt' ||
+        candidate === '/ComfyUI/custom_nodes/ComfyUINodeBuilder/MyPack/install.py',
       spawn,
     })
     expect(spawn).toHaveBeenNthCalledWith(1, '/ComfyUI/.venv/bin/python', [
-      '/ComfyUI/custom_nodes/MyPack/install.py',
-    ], expect.objectContaining({ cwd: '/ComfyUI' }))
+      '/ComfyUI/custom_nodes/ComfyUINodeBuilder/MyPack/install.py',
+    ], expect.objectContaining({
+      cwd: '/ComfyUI/custom_nodes/ComfyUINodeBuilder/MyPack',
+      env: expect.objectContaining({
+        GIT_CEILING_DIRECTORIES: '/ComfyUI/custom_nodes/ComfyUINodeBuilder/MyPack',
+        GIT_DISCOVERY_ACROSS_FILESYSTEM: '0',
+      }),
+    }))
     expect(spawn).toHaveBeenNthCalledWith(2, '/ComfyUI/.venv/bin/python', [
       '-m',
       'pip',
       'install',
       '-r',
-      '/ComfyUI/custom_nodes/MyPack/requirements.txt',
-    ], expect.objectContaining({ cwd: '/ComfyUI' }))
+      '/ComfyUI/custom_nodes/ComfyUINodeBuilder/MyPack/requirements.txt',
+    ], expect.objectContaining({ cwd: '/ComfyUI/custom_nodes/ComfyUINodeBuilder/MyPack' }))
   })
 
   it('falls back to uv when ComfyUI Python has no pip module', async () => {
@@ -90,16 +96,16 @@ describe('dependencyInstaller', () => {
       'pip',
       'install',
       '-r',
-      '/ComfyUI/custom_nodes/ComfyUINodeBuilder/requirements.txt',
-    ], expect.objectContaining({ cwd: '/ComfyUI' }))
+      '/ComfyUI/custom_nodes/ComfyUINodeBuilder/ComfyUINodeBuilder/requirements.txt',
+    ], expect.objectContaining({ cwd: '/ComfyUI/custom_nodes/ComfyUINodeBuilder/ComfyUINodeBuilder' }))
     expect(spawn).toHaveBeenNthCalledWith(2, 'uv', [
       'pip',
       'install',
       '--python',
       '/ComfyUI/.venv/bin/python',
       '-r',
-      '/ComfyUI/custom_nodes/ComfyUINodeBuilder/requirements.txt',
-    ], expect.objectContaining({ cwd: '/ComfyUI' }))
+      '/ComfyUI/custom_nodes/ComfyUINodeBuilder/ComfyUINodeBuilder/requirements.txt',
+    ], expect.objectContaining({ cwd: '/ComfyUI/custom_nodes/ComfyUINodeBuilder/ComfyUINodeBuilder' }))
     expect(result.stdout).toBe('uv ok')
   })
 })
