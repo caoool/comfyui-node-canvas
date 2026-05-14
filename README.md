@@ -25,6 +25,8 @@ Build powerful ComfyUI custom node packs with a visual GUI and AI.
 
 ![Animated progress panel: prompt to ComfyUI node, handled by AI](demo-ai-node-steps.svg)
 
+![Current AI Builder workbench with Local Codex, synced file tree, and protected managed pack files](ai-builder.png)
+
 **Demo:** a user asks for a simple LLM prompt-enhancer node; AI creates the node contract and code, updates dependencies, deploys the pack, and the node is tested in ComfyUI.
 
 **演示：** 用户提出一个简单的 LLM 提示词增强节点需求；AI 创建节点接口和代码、更新依赖、部署节点包，并在 ComfyUI 中测试节点。
@@ -95,18 +97,18 @@ It can help you:
 - validate the generated pack
 - run terminal checks in the pack workspace
 - request deployment when **Allow deploy** is enabled
-- use provider-backed models from OpenAI, OpenRouter, OpenAI-compatible servers, Anthropic, Gemini, or Ollama
+- use your local Codex plan through the installed `codex` CLI, or provider-backed models from OpenAI, OpenRouter, OpenAI-compatible servers, Anthropic, Gemini, or Ollama
 
 Deployment is gated. The assistant can ask for a deploy action, but the UI only emits deploy when you explicitly allow it.
 
-![AI settings and gated deploy controls](ai-settings.png)
+![Local Codex settings, model selection, reasoning effort, skills, and gated deploy controls](ai-settings.png)
 
 ### What The GUI Gives You
 
 - **Visual node contract:** add inputs, outputs, widgets, custom types, Return UI, categories, and metadata.
 - **Full Python editing:** edit generated node Python directly in a Monaco-powered workspace.
 - **Generated pack files:** inspect node files, `__init__.py`, runtime UI scripts, custom renderers, requirements, install scripts, and shared files.
-- **Managed deployment:** export ZIPs or write builder-managed packs into `<ComfyUI>/custom_nodes/<pack-folder>/`.
+- **Managed deployment:** export ZIPs or write builder-managed packs into `<ComfyUI>/custom_nodes/ComfyUINodeBuilder/<pack-folder>/`.
 - **Round-trip metadata:** keep `builder.project.json` so builder-owned packs can be loaded back into the app.
 - **Local helper server:** file system writes, AI provider calls, terminal commands, dependency install, and ComfyUI restart requests stay on loopback.
 
@@ -136,7 +138,7 @@ Open the Vite URL, then open **Settings** from the status bar and configure:
 
 - **ComfyUI URL:** usually `http://127.0.0.1:8188`
 - **ComfyUI Install Path:** the folder that contains ComfyUI's `custom_nodes` directory
-- **Pack Name / Pack Slug:** the local project name and category slug. The slug defaults to `ComfyUINodeBuilder/` so you can append your own category path. Deploy always mirrors the active pack into `custom_nodes/ComfyUINodeBuilder`.
+- **Pack Name / Pack Slug:** the local project name and category slug. The slug defaults to `ComfyUINodeBuilder/` so you can append your own pack folder, for example `ComfyUINodeBuilder/PromptTools`. Deploy mirrors the active pack into `custom_nodes/ComfyUINodeBuilder/<pack-folder>`.
 
 ### Basic Workflow
 
@@ -236,7 +238,7 @@ AI Builder 直接内置在工作台里，不是一个独立的聊天页面。
 - 验证生成的节点包
 - 在节点包工作目录中运行终端检查
 - 在开启 **Allow deploy** 后请求部署
-- 使用 OpenAI、OpenRouter、OpenAI-compatible、Anthropic、Gemini 或 Ollama 等模型提供商
+- 通过已安装的 `codex` CLI 使用本地 Codex 计划，或使用 OpenAI、OpenRouter、OpenAI-compatible、Anthropic、Gemini、Ollama 等模型提供商
 
 部署是有门禁的。AI 可以请求部署动作，但只有你明确开启允许部署后，界面才会发出部署操作。
 
@@ -245,7 +247,7 @@ AI Builder 直接内置在工作台里，不是一个独立的聊天页面。
 - **可视化节点接口：** 添加输入、输出、控件、自定义类型、Return UI、分类和元数据。
 - **完整 Python 编辑：** 在 Monaco 工作区中直接编辑生成的节点 Python。
 - **生成节点包文件：** 检查节点文件、`__init__.py`、运行时 UI 脚本、自定义渲染器、requirements、安装脚本和共享文件。
-- **托管部署：** 导出 ZIP，或把 builder 管理的节点包写入 `<ComfyUI>/custom_nodes/<pack-folder>/`。
+- **托管部署：** 导出 ZIP，或把 builder 管理的节点包写入 `<ComfyUI>/custom_nodes/ComfyUINodeBuilder/<pack-folder>/`。
 - **可回载元数据：** 通过 `builder.project.json` 让 builder 创建的节点包可以再次加载回应用。
 - **本地 helper server：** 文件写入、AI 调用、终端命令、依赖安装和 ComfyUI 重启请求都走 loopback。
 
@@ -275,7 +277,7 @@ npm run dev
 
 - **ComfyUI URL：** 通常是 `http://127.0.0.1:8188`
 - **ComfyUI Install Path：** 包含 ComfyUI `custom_nodes` 目录的文件夹
-- **Pack Name / Pack Slug：** 本地项目名和分类标识。Slug 默认是 `ComfyUINodeBuilder/`，可以在后面追加自己的分类路径。部署始终同步到 `custom_nodes/ComfyUINodeBuilder`。
+- **Pack Name / Pack Slug：** 本地项目名和分类标识。Slug 默认是 `ComfyUINodeBuilder/`，可以在后面追加自己的节点包目录，例如 `ComfyUINodeBuilder/PromptTools`。部署会同步到 `custom_nodes/ComfyUINodeBuilder/<pack-folder>`。
 
 ### 基本流程
 

@@ -13,7 +13,7 @@
     <title>ComfyUI Node Builder · AI GUI for Custom Nodes</title>
     <meta
       name="description"
-      content="ComfyUI Node Builder is a local AI-powered GUI app for building, editing, validating, deploying, and testing custom ComfyUI nodes and full node packs."
+      content="ComfyUI Node Builder is a local AI-powered GUI app for building, editing, validating, deploying, and testing custom ComfyUI nodes and full node packs with Local Codex support."
     />
     <meta
       name="keywords"
@@ -25,7 +25,7 @@
     <meta property="og:title" content="ComfyUI Node Builder · AI GUI for Custom Nodes" />
     <meta
       property="og:description"
-      content="Build custom ComfyUI nodes and complex node packs with a visual GUI, direct Python editing, AI-assisted authoring, validation, deployment, and testing."
+      content="Build custom ComfyUI nodes and complex node packs with a visual GUI, direct Python editing, Local Codex AI assistance, validation, deployment, and testing."
     />
     <meta property="og:image" content="https://caoool.github.io/comfyui-node-canvas/ai-builder.png" />
     <meta property="og:image:alt" content="ComfyUI Node Builder AI panel creating and editing a custom node pack." />
@@ -37,7 +37,7 @@
     <meta name="twitter:title" content="ComfyUI Node Builder · AI GUI for Custom Nodes" />
     <meta
       name="twitter:description"
-      content="A local GUI app for building custom ComfyUI nodes and full node packs with AI doing the heavy lifting."
+      content="A local GUI app for building custom ComfyUI nodes and full node packs with Local Codex and AI doing the heavy lifting."
     />
     <meta name="twitter:image" content="https://caoool.github.io/comfyui-node-canvas/ai-builder.png" />
     <link rel="canonical" href="https://caoool.github.io/comfyui-node-canvas/" />
@@ -61,7 +61,7 @@
             "applicationCategory": "DeveloperApplication",
             "operatingSystem": "Windows, macOS, Linux",
             "programmingLanguage": ["TypeScript", "Vue", "Python"],
-            "description": "ComfyUI Node Builder is a local AI-powered GUI app for building, editing, validating, deploying, and testing custom ComfyUI nodes and full node packs.",
+            "description": "ComfyUI Node Builder is a local AI-powered GUI app for building, editing, validating, deploying, and testing custom ComfyUI nodes and full node packs with Local Codex support.",
             "keywords": "ComfyUI, custom nodes, ComfyUI node builder, AI node builder, GUI node editor, Python node pack",
             "image": "https://caoool.github.io/comfyui-node-canvas/ai-builder.png",
             "offers": {
@@ -108,7 +108,7 @@
                 "name": "What can the AI Builder do?",
                 "acceptedAnswer": {
                   "@type": "Answer",
-                  "text": "The AI Builder can create nodes from prompts, edit generated files, explain errors, validate packs, run terminal checks, and request deployment when the user enables deploy permission."
+                  "text": "The AI Builder can use local Codex, create nodes from prompts, edit generated files, explain errors, validate packs, run terminal checks, and request deployment when the user enables deploy permission."
                 }
               }
             ]
@@ -163,8 +163,8 @@
             <h1 data-en="Build powerful ComfyUI custom node packs with GUI and AI." data-zh="用 GUI 和 AI 构建强大的 ComfyUI 自定义节点包。">
               Build powerful ComfyUI custom node packs with GUI and AI.
             </h1>
-            <p class="hero-sub" data-en="ComfyUI Node Builder is a local GUI app for creating custom nodes and full node packs with ease. Design the node contract visually, edit Python directly, then use AI to create, revise, validate, test, and deploy more complicated packs." data-zh="ComfyUI Node Builder 是一个本地 GUI 应用，用来轻松创建自定义节点和完整节点包。你可以可视化设计节点接口、直接编辑 Python，再用 AI 创建、修改、验证、测试和部署更复杂的节点包。">
-              ComfyUI Node Builder is a local GUI app for creating custom nodes and full node packs with ease. Design the node contract visually, edit Python directly, then use AI to create, revise, validate, test, and deploy more complicated packs.
+            <p class="hero-sub" data-en="ComfyUI Node Builder is a local GUI app for creating custom nodes and full node packs with ease. Design the node contract visually, edit Python directly, then use Local Codex or another AI provider to create, revise, validate, test, and deploy more complicated packs." data-zh="ComfyUI Node Builder 是一个本地 GUI 应用，用来轻松创建自定义节点和完整节点包。你可以可视化设计节点接口、直接编辑 Python，再用本地 Codex 或其他 AI 提供商创建、修改、验证、测试和部署更复杂的节点包。">
+              ComfyUI Node Builder is a local GUI app for creating custom nodes and full node packs with ease. Design the node contract visually, edit Python directly, then use Local Codex or another AI provider to create, revise, validate, test, and deploy more complicated packs.
             </p>
             <div class="hero-cta">
               <a class="btn btn-primary" href="https://github.com/caoool/comfyui-node-canvas#quick-start">
@@ -179,14 +179,14 @@
             </div>
             <div class="mini-points" aria-label="Highlights">
               <span data-en="Visual node contract" data-zh="可视化节点接口">Visual node contract</span>
-              <span data-en="AI edits and tests" data-zh="AI 修改与测试">AI edits and tests</span>
-              <span data-en="Deploy to ComfyUI" data-zh="部署到 ComfyUI">Deploy to ComfyUI</span>
+              <span data-en="Local Codex support" data-zh="支持本地 Codex">Local Codex support</span>
+              <span data-en="Synced pack files" data-zh="同步节点包文件">Synced pack files</span>
             </div>
           </div>
 
           <figure class="hero-shot demo-shot">
             <div class="demo-frame">
-              <img src="demo-ai-node-workflow.gif" alt="Looping demo of AI creating, deploying, and testing a ComfyUI custom node from a user request." />
+              <img src="ai-builder.png" alt="Current ComfyUI Node Builder workbench with Local Codex AI panel, synced pack files, and generated Python." />
             </div>
             <div class="demo-overlay" aria-hidden="true">
               <div class="demo-progress-track">
@@ -218,8 +218,8 @@
                 </div>
               </div>
             </div>
-            <figcaption data-en="Short demo: user request in, AI-created node pack out, then deploy and test in ComfyUI." data-zh="简短演示：用户输入需求，AI 创建节点包，然后部署并在 ComfyUI 中测试。">
-              Short demo: user request in, AI-created node pack out, then deploy and test in ComfyUI.
+            <figcaption data-en="Current alpha workbench: node contract, synced pack files, generated Python, and AI side panel together." data-zh="当前 alpha 工作台：节点接口、同步节点包文件、生成的 Python 和 AI 侧边栏在同一个界面中。">
+              Current alpha workbench: node contract, synced pack files, generated Python, and AI side panel together.
             </figcaption>
           </figure>
         </div>
@@ -241,14 +241,14 @@
           </article>
           <article>
             <h3 data-en="Build with AI power" data-zh="用 AI 构建复杂能力">Build with AI power</h3>
-            <p data-en="Ask AI to create nodes, edit files, explain errors, validate generated packs, run terminal checks, and request deployment when allowed." data-zh="让 AI 创建节点、编辑文件、解释错误、验证生成的节点包、运行终端检查，并在允许后请求部署。">
-              Ask AI to create nodes, edit files, explain errors, validate generated packs, run terminal checks, and request deployment when allowed.
+            <p data-en="Use your installed Codex plan locally, or another provider, to create nodes, edit files, explain errors, validate generated packs, run terminal checks, and request deployment when allowed." data-zh="可以使用本机已安装的 Codex 计划，也可以使用其他提供商，让 AI 创建节点、编辑文件、解释错误、验证节点包、运行终端检查，并在允许后请求部署。">
+              Use your installed Codex plan locally, or another provider, to create nodes, edit files, explain errors, validate generated packs, run terminal checks, and request deployment when allowed.
             </p>
           </article>
           <article>
             <h3 data-en="Ship complicated packs" data-zh="交付复杂节点包">Ship complicated packs</h3>
-            <p data-en="Keep direct control of Python, requirements, install scripts, generated mappings, runtime UI, ZIP export, and managed ComfyUI deploy." data-zh="保留对 Python、requirements、安装脚本、映射文件、运行时 UI、ZIP 导出和 ComfyUI 托管部署的直接控制。">
-              Keep direct control of Python, requirements, install scripts, generated mappings, runtime UI, ZIP export, and managed ComfyUI deploy.
+            <p data-en="Keep direct control of Python, requirements, install scripts, generated mappings, runtime UI, ZIP export, and managed deploy into ComfyUINodeBuilder pack folders." data-zh="保留对 Python、requirements、安装脚本、映射文件、运行时 UI、ZIP 导出，以及 ComfyUINodeBuilder 节点包目录托管部署的直接控制。">
+              Keep direct control of Python, requirements, install scripts, generated mappings, runtime UI, ZIP export, and managed deploy into ComfyUINodeBuilder pack folders.
             </p>
           </article>
         </div>
@@ -264,8 +264,8 @@
         <div class="answer-grid">
           <article>
             <h3 data-en="What is it?" data-zh="这是什么？">What is it?</h3>
-            <p data-en="A local GUI app for building custom ComfyUI nodes and full node packs with AI-assisted authoring, editable Python, validation, deployment, and testing." data-zh="一个本地 GUI 应用，用 AI 辅助创建 ComfyUI 自定义节点和完整节点包，同时保留 Python 编辑、验证、部署和测试。">
-              A local GUI app for building custom ComfyUI nodes and full node packs with AI-assisted authoring, editable Python, validation, deployment, and testing.
+            <p data-en="A local GUI app for building custom ComfyUI nodes and full node packs with Local Codex or provider-backed AI, editable Python, validation, deployment, and testing." data-zh="一个本地 GUI 应用，可以用本地 Codex 或其他模型提供商辅助创建 ComfyUI 自定义节点和完整节点包，同时保留 Python 编辑、验证、部署和测试。">
+              A local GUI app for building custom ComfyUI nodes and full node packs with Local Codex or provider-backed AI, editable Python, validation, deployment, and testing.
             </p>
           </article>
           <article>
@@ -276,8 +276,8 @@
           </article>
           <article>
             <h3 data-en="Why use it?" data-zh="为什么用它？">Why use it?</h3>
-            <p data-en="It removes repetitive node-pack boilerplate while keeping the real files visible, editable, validated, and ready to deploy into ComfyUI." data-zh="它减少重复的节点包样板代码，同时让真实文件保持可见、可编辑、可验证，并可部署到 ComfyUI。">
-              It removes repetitive node-pack boilerplate while keeping the real files visible, editable, validated, and ready to deploy into ComfyUI.
+            <p data-en="It removes repetitive node-pack boilerplate while keeping the real files visible, editable, validated, and synced into ComfyUI's managed custom node folder." data-zh="它减少重复的节点包样板代码，同时让真实文件保持可见、可编辑、可验证，并同步到 ComfyUI 的托管自定义节点目录。">
+              It removes repetitive node-pack boilerplate while keeping the real files visible, editable, validated, and synced into ComfyUI's managed custom node folder.
             </p>
           </article>
         </div>
@@ -287,27 +287,27 @@
         <div class="section-head center">
           <div class="section-eyebrow" data-en="AI workflow" data-zh="AI 工作流">AI workflow</div>
           <h2 data-en="Screenshots from the actual app." data-zh="来自真实应用的截图。">Screenshots from the actual app.</h2>
-          <p data-en="The AI Builder sits inside the same workbench as your node preview, source files, and deploy controls." data-zh="AI Builder 位于同一个工作台中，和节点预览、源码文件、部署控制一起工作。">
-            The AI Builder sits inside the same workbench as your node preview, source files, and deploy controls.
+          <p data-en="The AI Builder sits inside the same workbench as your node preview, synced file tree, source files, and deploy controls." data-zh="AI Builder 位于同一个工作台中，和节点预览、同步文件树、源码文件、部署控制一起工作。">
+            The AI Builder sits inside the same workbench as your node preview, synced file tree, source files, and deploy controls.
           </p>
         </div>
         <div class="shot-grid">
           <figure class="shot-card shot-wide">
-            <img src="ai-builder.png" alt="AI Builder panel inside the ComfyUI Node Builder workbench." />
-            <figcaption data-en="Chat with AI while keeping the node contract and generated Python visible." data-zh="一边和 AI 对话，一边查看节点接口和生成的 Python。">
-              Chat with AI while keeping the node contract and generated Python visible.
+            <img src="ai-builder.png" alt="AI Builder panel with Local Codex, synced file tree, protected files, and generated Python visible." />
+            <figcaption data-en="Chat with AI while the node contract, synced file tree, protected files, and generated Python stay visible." data-zh="一边和 AI 对话，一边查看节点接口、同步文件树、受保护文件和生成的 Python。">
+              Chat with AI while the node contract, synced file tree, protected files, and generated Python stay visible.
             </figcaption>
           </figure>
           <figure class="shot-card">
-            <img src="ai-settings.png" alt="AI settings with provider, model, skills, API key, and deploy gate." />
-            <figcaption data-en="Choose provider, model, skills, and gated deploy permissions." data-zh="选择提供商、模型、AI 技能，并控制部署权限。">
-              Choose provider, model, skills, and gated deploy permissions.
+            <img src="ai-settings.png" alt="AI settings showing Local Codex availability, model selection, reasoning effort, skills, and deploy gate." />
+            <figcaption data-en="Use local Codex, select model and reasoning effort, choose skills, and gate deploy permissions." data-zh="使用本地 Codex，选择模型和推理强度、AI 技能，并控制部署权限。">
+              Use local Codex, select model and reasoning effort, choose skills, and gate deploy permissions.
             </figcaption>
           </figure>
           <figure class="shot-card">
-            <img src="polished-populated.png" alt="ComfyUI Node Builder visual node contract and generated Python." />
-            <figcaption data-en="Visual contracts stay synced with editable generated pack files." data-zh="可视化节点接口会和可编辑的生成文件保持同步。">
-              Visual contracts stay synced with editable generated pack files.
+            <img src="polished-populated.png" alt="ComfyUI Node Builder visual node contract, nested pack file tree, and generated Python." />
+            <figcaption data-en="Visual contracts stay synced with editable nested pack files under ComfyUINodeBuilder." data-zh="可视化节点接口会和 ComfyUINodeBuilder 下的嵌套节点包文件保持同步。">
+              Visual contracts stay synced with editable nested pack files under ComfyUINodeBuilder.
             </figcaption>
           </figure>
         </div>

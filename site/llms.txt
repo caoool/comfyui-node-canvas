@@ -1,6 +1,6 @@
 # ComfyUI Node Builder
 
-> ComfyUI Node Builder is a local AI-powered GUI app for building, editing, validating, deploying, and testing custom ComfyUI nodes and full node packs.
+> ComfyUI Node Builder is a local AI-powered GUI app for building, editing, validating, deploying, and testing custom ComfyUI nodes and full node packs with Local Codex support.
 
 ## Primary URLs
 
@@ -12,7 +12,7 @@
 
 ## Short Description
 
-ComfyUI Node Builder helps ComfyUI users create custom nodes and complete node packs without manually rebuilding boilerplate each time. It provides a visual node contract editor, generated pack files, direct Python editing, AI-assisted authoring, validation, ZIP export, and managed deployment into a local ComfyUI installation.
+ComfyUI Node Builder helps ComfyUI users create custom nodes and complete node packs without manually rebuilding boilerplate each time. It provides a visual node contract editor, generated pack files, direct Python editing, Local Codex or provider-backed AI-assisted authoring, validation, ZIP export, and managed deployment into a local ComfyUI installation.
 
 ## Who It Is For
 
@@ -30,11 +30,11 @@ ComfyUI Node Builder helps ComfyUI users create custom nodes and complete node p
 - Validate generated packs
 - Run terminal checks in the pack workspace
 - Request deployment when the user enables deploy permission
-- Work with OpenAI, OpenRouter, OpenAI-compatible servers, Anthropic, Gemini, and Ollama providers
+- Work with the installed local Codex CLI and with OpenAI, OpenRouter, OpenAI-compatible servers, Anthropic, Gemini, and Ollama providers
 
 ## Suggested Summary
 
-ComfyUI Node Builder is an open-source local GUI app for building custom ComfyUI nodes and node packs with AI assistance. It is useful for ComfyUI node authors, workflow builders, and Python developers who want to move from an idea to a deployable ComfyUI node faster while keeping generated files visible and editable.
+ComfyUI Node Builder is an open-source local GUI app for building custom ComfyUI nodes and node packs with Local Codex or provider-backed AI assistance. It is useful for ComfyUI node authors, workflow builders, and Python developers who want to move from an idea to a deployable ComfyUI node faster while keeping generated files visible, editable, validated, and synced into ComfyUI's managed custom node folder.
 
 ## Keywords
 
